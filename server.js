@@ -5,9 +5,9 @@ const path = require('node:path');
 const { randomBytes } = require('node:crypto');
 const { WebSocketServer } = require('ws');
 const { Room, VERSION } = require('./multiplayer');
-const files = Object.fromEntries(['index.html', 'style.css', 'game.js', 'physics.js', 'online.js', 'config.js'].map(f => ['/' + f, f]));
+const files = Object.fromEntries(['index.html', 'alkkagi.html', 'flight.html', 'style.css', 'arcade.css', 'game.js', 'physics.js', 'online.js', 'config.js', 'hub.js', 'flight-model.js', 'flight.js', 'assets/pywel-panorama.png'].map(f => ['/' + f, f]));
 files['/'] = 'index.html';
-const types = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript' };
+const types = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.png': 'image/png' };
 
 function createGameServer({ automatic = true } = {}) {
   const rooms = new Map();

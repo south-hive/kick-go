@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#182722">
+  <title>나무 위의 한 수 · 알까기</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav class="game-back"><a href="./">← 게임 선택</a></nav>
+  <main class="app">
+    <header><div><span class="eyebrow">WOOD & STONE</span><h1>나무 위의 한 수<span>알까기</span></h1></div><button id="sound" class="icon" aria-label="효과음 켜기" aria-pressed="false">♪</button></header>
+    <section class="scoreboard" aria-label="남은 돌">
+      <div class="player active" id="black-player"><i class="stone black"></i><div><span id="black-label">나의 흑돌</span><strong id="black-count">5</strong></div></div>
+      <div class="versus">5 STONE MATCH<span>VS</span></div>
+      <div class="player" id="white-player"><div><span id="white-label">상대 백돌</span><strong id="white-count">5</strong></div><i class="stone white"></i></div>
+    </section>
+    <div class="status"><span id="turn-dot"></span><p id="status" role="status" aria-live="polite">흑돌 차례 · 돌을 당겨 조준하세요</p></div>
+    <section class="arena" aria-label="알까기 게임판">
+      <canvas id="game" aria-label="내 돌을 누르고 뒤로 당겼다가 놓으면 반대 방향으로 발사됩니다."></canvas>
+      <div id="result" class="result" hidden><span>MATCH COMPLETE</span><h2 id="winner"></h2><p id="result-detail"></p><button id="again" class="primary">한 판 더 하기 ↗</button></div>
+    </section>
+    <section class="power"><span>튕기는 힘</span><div class="track"><div id="power-fill"></div></div><strong id="power-number">0%</strong></section>
+    <section class="spin-panel" aria-label="타격점 설정">
+      <div class="strike-control"><span class="strike-top">전진</span><button id="strike-pad" aria-label="타격점 선택. 위는 전진, 아래는 백샷, 좌우는 옆 회전. 방향키로 조절하고 Home 키로 중앙 복귀." aria-describedby="strike-description"><span class="cross horizontal"></span><span class="cross vertical"></span><span id="strike-dot"></span></button><span class="strike-bottom">백샷</span></div>
+      <div class="strike-info"><strong>타격점 <span id="strike-value" role="status">중앙 · 무회전</span></strong><p id="strike-description">돌 그림을 터치해 회전을 정하세요.<br>발사 방향 기준 · 돌과 충돌한 뒤 적용</p><button id="strike-reset">중앙으로</button></div>
+    </section>
+    <p class="hint"><span>↙</span> 내 돌을 뒤로 당긴 뒤 놓으세요.<br><small>멀리 당길수록 강하게 · 중앙 연결쇠는 튕겨 나오는 장애물</small></p>
+    <footer><div class="modes" role="group" aria-label="플레이 모드"><button id="ai-mode" class="selected" aria-pressed="true">혼자</button><button id="local-mode" aria-pressed="false">한 기기 둘이</button><button id="online-mode" aria-pressed="false">온라인 대전</button></div><button id="restart" class="restart">↻ 새 게임</button></footer>
+    <section id="online-panel" class="online-panel" hidden aria-label="온라인 대전 방">
+      <div class="online-title"><strong>친구와 온라인 대전</strong><span id="online-role"></span></div>
+      <p id="online-message" role="status" aria-live="polite">방을 만들거나 초대 코드를 입력하세요.</p>
+      <div id="online-lobby"><button id="room-create" class="primary">방 만들기</button><form id="room-form"><label for="room-code">초대 코드</label><div><input id="room-code" placeholder="12자리 코드" maxlength="12" autocomplete="off" autocapitalize="characters" spellcheck="false" pattern="[A-Fa-f0-9]{12}" required><button id="room-join" type="submit">입장</button></div></form></div>
+      <div id="online-room" hidden><label for="invite-link">친구에게 아래 링크를 보내 주세요</label><input id="invite-link" readonly aria-label="초대 링크"><button id="invite-copy">초대 링크 복사</button><span id="copy-message" role="status"></span></div>
+      <div class="online-actions"><button id="room-reconnect" hidden>재접속</button><button id="room-leave">온라인 나가기</button></div>
+      <small>방장 흑돌 · 참가자 백돌 · 연결이 끊기면 10분 안에 같은 창으로 돌아오세요.</small>
+    </section>
+    <p class="caption">손끝의 힘, 한 수의 승부.</p>
+  </main>
+  <dialog id="confirm"><h2>새 판을 시작할까요?</h2><p>진행 중인 경기는 초기화됩니다.</p><div><button id="cancel">계속 하기</button><button id="accept" class="primary">새로 시작</button></div></dialog>
+  <script src="config.js"></script><script src="physics.js"></script><script src="online.js"></script><script src="game.js"></script>
+</body>
+</html>

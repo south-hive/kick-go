@@ -1,7 +1,7 @@
 const { test, expect } = require('@playwright/test');
 
 async function online(page) {
-  await page.goto('/'); await page.locator('#online-mode').click(); await page.locator('#accept').click();
+  await page.goto('/'); await page.locator('#choose-alkkagi').click(); await page.locator('#online-mode').click(); await page.locator('#accept').click();
 }
 async function shoot(page, id) {
   await page.locator('#game').scrollIntoViewIfNeeded();
@@ -45,6 +45,7 @@ test('two browser contexts trade shots, share positions, and resume after reload
 
 test('offline play, strike selection and edge-limited pull still work', async ({ page }) => {
   await page.goto('/');
+  await page.locator('#choose-alkkagi').click();
   await page.locator('#strike-pad').focus(); await page.keyboard.press('ArrowDown');
   await expect(page.locator('#strike-value')).toContainText('백샷');
   await page.keyboard.press('Home'); await expect(page.locator('#strike-value')).toHaveText('중앙 · 무회전');
