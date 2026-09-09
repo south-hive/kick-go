@@ -2,5 +2,18 @@
   "name": "wood-and-stone",
   "private": true,
   "version": "1.0.0",
-  "scripts": { "start": "node server.js", "test": "node --test tests/*.test.js" }
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test tests/*.test.js",
+    "test:browser": "playwright test"
+  },
+  "dependencies": {
+    "ws": "^8.21.3"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
 }

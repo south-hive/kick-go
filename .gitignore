@@ -4,3 +4,8 @@ node_modules/
 local.properties
 .idea/
 *.iml
+
+test-results/
+playwright-report/
+.env
+.env.*

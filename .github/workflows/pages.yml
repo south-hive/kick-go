@@ -25,7 +25,19 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - run: npm ci
       - run: npm test
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:browser
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: browser-test-results
+          path: test-results/
+      - name: Configure online server
+        env:
+          KICK_GO_SERVER: ${{ vars.KICK_GO_SERVER }}
+        run: node scripts/configure-online.js
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

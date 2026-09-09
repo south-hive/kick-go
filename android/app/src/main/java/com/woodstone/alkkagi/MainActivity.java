@@ -38,7 +38,7 @@ public class MainActivity extends Activity {
                 String path = request.getUrl().getPath();
                 if (!HOST.equals(request.getUrl().getHost()) || path == null) return null;
                 String file = path.equals("/") ? "index.html" : path.substring(1);
-                if (!(file.equals("index.html") || file.equals("style.css") || file.equals("physics.js") || file.equals("game.js"))) {
+                if (!(file.equals("index.html") || file.equals("style.css") || file.equals("physics.js") || file.equals("game.js") || file.equals("online.js") || file.equals("config.js"))) {
                     return new WebResourceResponse("text/plain", "UTF-8", new java.io.ByteArrayInputStream(new byte[0]));
                 }
                 String type = file.endsWith(".js") ? "text/javascript" : file.endsWith(".css") ? "text/css" : "text/html";

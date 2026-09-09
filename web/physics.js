@@ -1,7 +1,7 @@
 (function(root){
   'use strict';
   const SIZE=1200, EDGE=86, R=18;
-  const RESTITUTION=.75, FRICTION=135, SLOW_SPEED=300, EXTRA_FRICTION=135;
+  const RESTITUTION=.84, FRICTION=135, SLOW_SPEED=300, EXTRA_FRICTION=135;
   const hinges=[{x:214.5,y:584,w:111,h:32},{x:874.5,y:584,w:111,h:32}];
   // Arcade spin: preserve the launch frame, then release stored rotation on stone impact.
   function shoot(s,vx,vy,side=0,follow=0){
