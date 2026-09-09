@@ -14,11 +14,70 @@ test('launch angle and strength change trajectory; invalid values remain finite'
   const invalid = M.create(M.profile()); M.launch(invalid, NaN, Infinity); M.step(invalid, Infinity);
   assert.ok(Number.isFinite(invalid.x + invalid.y + invalid.vx + invalid.vy));
 });
-test('timed gliding spends stamina and meaningfully improves flight distance', () => {
-  const ballistic = fly(), gliding = fly(M.profile(), r => ({ glide: r.vy < 2 }));
-  assert.ok(gliding.x > ballistic.x * 1.5);
-  assert.equal(gliding.stamina, 0);
-  assert.ok(gliding.time < 90);
+function cycleControl() {
+  let pull = false;
+  return r => {
+    if (r.vy < -35) pull = true;
+    if (r.vy > 28 || Math.hypot(r.vx, r.vy) < 50) pull = false;
+    return { glide: pull };
+  };
+}
+test('timed pull-ups beat holding continuously and finish by landing', () => {
+  const ballistic = fly(), held = fly(M.profile(), () => ({ glide: true }));
+  const cycled = fly(M.profile(), cycleControl());
+  assert.ok(cycled.x > ballistic.x * 1.5);
+  assert.ok(cycled.x > held.x * 2);
+  assert.equal(cycled.reason, 'landed');
+  assert.ok(cycled.stamina < cycled.maxStamina);
+  assert.ok(cycled.time < 90);
+});
+test('descent gains speed and a sustained pull converts it into actual ascent', () => {
+  const r = M.create(M.profile()); M.launch(r);
+  r.items = []; r.ruins = []; r.y = 350; r.vx = 95; r.vy = -25;
+  const speed = Math.hypot(r.vx, r.vy);
+  for (let i = 0; i < 120; i++) M.step(r, 1 / 120);
+  assert.ok(Math.hypot(r.vx, r.vy) > speed);
+  const fast = Math.hypot(r.vx, r.vy);
+  for (let i = 0; i < 120; i++) M.step(r, 1 / 120, { glide: true });
+  assert.ok(r.vy > 0);
+  assert.ok(Math.hypot(r.vx, r.vy) < fast);
+  const low = r.y;
+  for (let i = 0; i < 30; i++) M.step(r, 1 / 120, { glide: true });
+  assert.ok(r.y > low);
+  assert.ok(r.pitch > 0);
+});
+test('pull-ups never create energy, even with unlimited stamina and best wings', () => {
+  for (const wing of [0, 5]) {
+    const r = M.create(M.profile({ upgrades: { wing } })); M.launch(r);
+    r.items = []; r.ruins = [];
+    const control = cycleControl();
+    let previous = r.vx ** 2 / 2 + r.vy ** 2 / 2 + 14 * r.y;
+    let climbs = 0, oldVy = r.vy, elapsed = 0;
+    for (let i = 0; i < 120 * 300 && r.phase === 'flying'; i++) {
+      r.stamina = r.maxStamina;
+      r.x = 0; r.time = 0; // Disable goal and timeout: require a physical landing.
+      elapsed += 1 / 120;
+      M.step(r, 1 / 120, control(r));
+      const energy = r.vx ** 2 / 2 + r.vy ** 2 / 2 + 14 * r.y;
+      assert.ok(energy <= previous + 1e-7);
+      previous = energy;
+      if (oldVy < 0 && r.vy > 0) climbs++;
+      oldVy = r.vy;
+    }
+    assert.ok(climbs >= 2);
+    assert.equal(r.phase, 'sliding');
+    assert.ok(elapsed < 300);
+  }
+});
+test('low speed loses pull-up authority and dive takes priority', () => {
+  const r = M.create(M.profile()); M.launch(r); r.items = []; r.ruins = [];
+  r.vx = 20; r.vy = 0;
+  M.step(r, .05, { glide: true });
+  assert.equal(r.stalled, true); assert.ok(r.vy < 0);
+  const stamina = r.stamina;
+  M.step(r, .05, { glide: true, dive: true });
+  assert.equal(r.gliding, false); assert.equal(r.stalled, false);
+  assert.equal(r.stamina, stamina); assert.ok(r.pitch < 0);
 });
 test('boost requires stamina and cooldown; exhausted gliding falls normally', () => {
   const r = M.create(M.profile()); assert.equal(M.boost(r), false); M.launch(r);
@@ -48,7 +107,7 @@ test('upgrades affect their intended abilities and cannot exceed five levels', (
   for(const g of M.GEAR)for(let i=0;i<5;i++)assert.equal(M.buy(p,g.id),true);
   assert.equal(M.buy(p,'stamina'),false);assert.equal(M.cost(p,'stamina'),null);
   const r=M.create(p);assert.equal(r.maxStamina,210);M.launch(r);const vx=r.vx;M.boost(r);assert.ok(r.vx-vx>=69);
-  const upgraded=fly(p,r=>({glide:r.vy<2}));assert.equal(upgraded.reason,'goal');assert.equal(upgraded.x,5000);
+  const upgraded=fly(p,cycleControl());assert.equal(upgraded.reason,'goal');assert.equal(upgraded.x,5000);
 });
 test('save data is sanitized and round-trips without changing earned progress', () => {
   const p=M.profile({silver:-5,best:Infinity,runs:'bad',upgrades:{stamina:999,leap:-2,wing:NaN}});

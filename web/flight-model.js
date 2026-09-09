@@ -5,10 +5,11 @@
 })(typeof globalThis === 'object' ? globalThis : this, function () {
   'use strict';
   const GOAL = 5000;
+  const START_HEIGHT = 240, GRAVITY = 14;
   const GEAR = [
     { id: 'stamina', name: '회색갈기의 지구력', icon: '◈', text: '최대 스태미너 +22', base: 45 },
     { id: 'leap', name: '힘의 도약', icon: '↗', text: '도약 속도 +12', base: 40 },
-    { id: 'wing', name: '까마귀의 날개', icon: '羽', text: '활공 소모 감소 · 공기 저항 감소', base: 60 },
+    { id: 'wing', name: '까마귀의 날개', icon: '羽', text: '기수 들기 소모 감소 · 공기 저항 감소', base: 60 },
     { id: 'abyss', name: '심연의 힘', icon: '✧', text: '공중 추진력 · 상승력 증가', base: 65 },
     { id: 'magnet', name: '심연의 인력', icon: '◎', text: '수집 반경 +14m', base: 35 },
     { id: 'meal', name: '야영지 요리', icon: '♨', text: '보급품 스태미너 회복 +7', base: 40 },
@@ -48,11 +49,11 @@
       items.push({ x, y: 42 + random() * 150, type, taken: false });
       if (type === 'silver') items.push({ x: x + 28, y: items.at(-1).y + 8, type, taken: false });
     }
-    return { phase: 'ready', x: 0, y: 64, vx: 0, vy: 0, time: 0, levels,
+    return { phase: 'ready', x: 0, y: START_HEIGHT, vx: 0, vy: 0, time: 0, levels,
       stamina: 100 + levels.stamina * 22, maxStamina: 100 + levels.stamina * 22,
-      cooldown: 0, boostTrail: 0, hit: 0, gliding: false, items, coins: 0, collected: 0,
+      cooldown: 0, boostTrail: 0, hit: 0, gliding: false, pitch: 0, stalled: false, items, coins: 0, collected: 0,
       ruins: [740, 1640, 2540, 3440, 4340].map((x, i) => ({ x, y: 65 + (i % 3) * 35, hit: false })),
-      notice: '', noticeTime: 0, maxHeight: 64, rewarded: false, reward: 0, reason: '' };
+      notice: '', noticeTime: 0, maxHeight: START_HEIGHT, rewarded: false, reward: 0, reason: '' };
   }
   function launch(run, angle = 38, power = .85) {
     if (run.phase !== 'ready') return false;
@@ -77,12 +78,26 @@
     run.noticeTime = Math.max(0, run.noticeTime - dt);
     run.gliding = run.phase === 'flying' && !!input.glide && !input.dive && run.stamina > 0;
     if (run.phase === 'flying') {
+      // Gravity trades height for speed. Lift rotates velocity without adding energy.
+      // Exact ballistic displacement plus dissipative drag keeps every pull-up lossy.
+      const oldVy = run.vy;
+      run.vy -= GRAVITY * dt;
+      run.y += (oldVy + run.vy) * .5 * dt;
+      run.x += run.vx * dt;
+      const speed = Math.hypot(run.vx, run.vy);
+      let angle = Math.atan2(run.vy, run.vx);
+      run.stalled = run.gliding && speed < 48;
       if (run.gliding) {
-        run.stamina = Math.max(0, run.stamina - (11 - run.levels.wing * 1.1) * dt);
-        run.vy += (-4 - run.vy) * Math.min(1, dt * 1.4);
-      } else run.vy -= (input.dive ? 40 : 24) * dt;
-      run.vx *= Math.exp(-(run.gliding ? .018 : .026) * (1 - run.levels.wing * .07) * dt);
-      run.x += run.vx * dt; run.y += run.vy * dt;
+        run.stamina = Math.max(0, run.stamina - (8 - run.levels.wing * .7) * dt);
+        const authority = clamp((speed - 32) / 75, 0, 1);
+        angle += Math.min(Math.max(0, Math.PI * .36 - angle), .95 * authority * dt);
+      } else if (input.dive) {
+        angle -= Math.min(Math.max(0, angle + Math.PI * .43), .55 * dt);
+      }
+      const drag = (.012 + (run.gliding ? .028 : 0) + (run.stalled ? .055 : 0)) * (1 - run.levels.wing * .07);
+      const remainingSpeed = speed * Math.exp(-drag * dt);
+      run.vx = Math.cos(angle) * remainingSpeed;
+      run.vy = Math.sin(angle) * remainingSpeed;
       run.maxHeight = Math.max(run.maxHeight, run.y);
       for (const item of run.items) {
         if (item.taken || Math.hypot(run.x - item.x, run.y - item.y) > 30 + run.levels.magnet * 14) continue;
@@ -107,6 +122,7 @@
       run.x += run.vx * dt; run.vx = Math.max(0, run.vx - 65 * dt);
       if (run.vx <= 1) { run.phase = 'over'; run.reason = 'landed'; }
     }
+    run.pitch = Math.atan2(run.vy, run.vx);
     if (run.x >= GOAL) { run.x = GOAL; run.phase = 'over'; run.reason = 'goal'; }
     else if (run.time >= 90) { run.phase = 'over'; run.reason = 'storm'; }
   }
@@ -118,5 +134,5 @@
     p.total = Math.min(1000000000, p.total + Math.floor(run.x)); p.runs++;
     return true;
   }
-  return { GOAL, GEAR, REGIONS, profile, cost, buy, region, create, launch, boost, step, settle };
+  return { GOAL, START_HEIGHT, GEAR, REGIONS, profile, cost, buy, region, create, launch, boost, step, settle };
 });

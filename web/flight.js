@@ -6,7 +6,7 @@
   try { saved = JSON.parse(localStorage.getItem(STORAGE)); } catch { saved = null; }
   const profile = M.profile(saved);
   let run, paused = false, last = 0, accumulator = 0, charge = null, drag = null, sound = false, audio;
-  let width = 1, height = 1, lastCollected = 0, lastHit = 0, particles = [];
+  let width = 1, height = 1, lastCollected = 0, lastHit = 0, particles = [], heroPitch = 0;
   const keys = new Set(), fingers = new Set();
   const picture = new Image(); picture.src = 'assets/pywel-panorama.png';
   const set = (id, text) => { if ($(id).textContent !== String(text)) $(id).textContent = text; };
@@ -48,7 +48,7 @@
   function release() { keys.clear(); fingers.clear(); charge = null; drag = null; $('flight-glide').classList.remove('active'); }
   function reset() {
     release(); run = M.create(profile, 17 + profile.runs * 73); paused = false; accumulator = 0; last = 0;
-    particles = []; lastCollected = 0; lastHit = 0;
+    particles = []; heroPitch = 0; lastCollected = 0; lastHit = 0;
     $('flight-result').hidden = true; $('flight-paused').hidden = true;
     $('flight-power-fill').style.width = '85%'; set('flight-power', '85%'); shop(); hud();
   }
@@ -75,7 +75,7 @@
   function hud() {
     const flying = run.phase === 'flying', active = flying || run.phase === 'sliding';
     set('flight-distance', number(run.x)); set('flight-region', M.region(run.x).name);
-    set('flight-altitude', '고도 ' + number(run.y) + 'm');
+    set('flight-altitude', '고도 ' + number(run.y) + 'm · 속도 ' + number(Math.hypot(run.vx, run.vy)) + 'm/s');
     set('flight-stamina-text', `${Math.ceil(run.stamina)} / ${run.maxStamina}`);
     $('flight-stamina-fill').style.width = (run.stamina / run.maxStamina * 100) + '%';
     $('flight-stamina-bar').setAttribute('aria-valuemax', run.maxStamina);
@@ -87,7 +87,7 @@
     $('flight-boost').disabled = !flying || paused || run.stamina < 24 || run.cooldown > 0;
     $('flight-glide').classList.toggle('active', run.gliding && !paused);
     const text = paused ? '잠시 쉬는 중' : run.phase === 'ready' ? '도약을 준비하세요' : run.phase === 'over' ? '다음 모험을 준비하세요' :
-      run.noticeTime > 0 ? run.notice : run.phase === 'sliding' ? '착지 중…' : run.stamina <= 0 ? '스태미너 소진 · 착지에 대비하세요' : run.gliding ? '까마귀의 날개 · 활공 중' : '바람을 가르며 · SPACE로 활공';
+      run.noticeTime > 0 ? run.notice : run.phase === 'sliding' ? '착지 중…' : run.stamina <= 0 ? '스태미너 소진 · 착지에 대비하세요' : run.stalled ? '속도 부족 · 손을 놓고 하강해 가속하세요' : run.gliding ? (run.vy > 0 ? '상승 중 · 속도를 높이로 바꾸는 중' : '기수 들기 · 누르고 있으면 상승으로 전환') : run.vy < 0 ? '하강 가속 · SPACE를 눌러 상승하세요' : '상승 중 · 다음 하강을 기다리세요';
     set('flight-state', text);
     $('journey-progress').style.width = Math.min(100, Math.max(run.x, profile.best) / M.GOAL * 100) + '%';
     M.REGIONS.forEach((r, i) => $('region-' + i).classList.toggle('active', r.at <= Math.max(run.x, profile.best)));
@@ -168,14 +168,18 @@
     ctx.beginPath(); points.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath();
     ctx.fillStyle = fill; ctx.fill(); if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 1; ctx.stroke(); }
   }
-  function hero(x, y, now) {
+  function hero(x, y, now, dt) {
     ctx.save(); ctx.translate(x, y);
     const flying = run.phase === 'flying', flutter = Math.sin(now / 110) * 4;
-    if (flying) ctx.rotate(clamp(-Math.atan2(run.vy, run.vx) * .55, -.5, .5));
+    const targetPitch = flying ? -run.pitch : 0;
+    heroPitch += (targetPitch - heroPitch) * (1 - Math.exp(-10 * dt));
+    ctx.rotate(heroPitch);
     ctx.shadowColor = '#15272280'; ctx.shadowBlur = 7; ctx.shadowOffsetY = 4;
-    if (run.gliding) {
+    if (flying) {
+      ctx.save(); ctx.scale(1, run.gliding ? 1 : .55);
       polygon([[-2,-8],[-63,-34+flutter],[-48,-3],[-55,-11],[-30,10],[-37,1],[-14,16],[10,3]], '#15252c', '#728582');
       polygon([[5,-9],[26,-43-flutter],[43,-56],[35,-32],[52,-41],[31,-10],[41,-19],[18,12]], '#25353c', '#839090');
+      ctx.restore();
     }
     polygon([[-7,-14],[-20,5],[-40,14+flutter],[-22,20],[-10,10],[6,-1]], '#823c32', '#a5664c');
     ctx.shadowColor = 'transparent'; ctx.lineCap = 'round';
@@ -220,7 +224,7 @@
       }
     }
     if (run.x < 250) {
-      const px=sx(0), py=sy(64)+29;
+      const px=sx(0), py=sy(M.START_HEIGHT)+29;
       polygon([[px-100,py+18],[px-50,py-4],[px+18,py],[px+25,py+13],[px+5,py+80],[px-20,ground+90],[px-100,ground+90]],'#5c6050','#a5a88b');
       polygon([[px-50,py-4],[px+18,py],[px+25,py+13],[px-65,py+9]],'#919875');
     }
@@ -241,7 +245,7 @@
       const angle=+$('flight-angle').value*Math.PI/180;ctx.strokeStyle='#fff1b9b0';ctx.lineWidth=1.5;ctx.setLineDash([3,7]);ctx.beginPath();ctx.moveTo(px+20,py-15);ctx.quadraticCurveTo(px+80,py-35-Math.sin(angle)*45,px+135,py-25-Math.sin(angle)*60);ctx.stroke();ctx.setLineDash([]);
       if(drag){ctx.strokeStyle='#fff0a2';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(drag.x,drag.y);ctx.lineTo(drag.endX,drag.endY);ctx.stroke();}
     }
-    hero(px,py,now);
+    hero(px,py,now,dt);
     if(run.hit>0){ctx.fillStyle=`rgba(173,62,46,${run.hit*.18})`;ctx.fillRect(0,0,width,height);}
     if(run.y*unit>height*.57){ctx.fillStyle='#f2e2bb';ctx.font='10px system-ui';ctx.fillText('↓ 지면 '+number(run.y)+'m',width-78,height-42);}
   }
