@@ -19,6 +19,7 @@ test('two browser contexts trade shots, share positions, and resume after reload
   try {
     await online(host); await host.locator('#room-create').click();
     await expect(host.locator('#online-role')).toHaveText('나: 흑돌');
+    await expect(host.locator('#online-lobby')).toBeHidden();
     const link = await host.locator('#invite-link').inputValue();
     await guest.goto(link); await guest.locator('#room-join').click();
     await expect(guest.locator('#online-role')).toHaveText('나: 백돌');
