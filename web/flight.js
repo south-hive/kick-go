@@ -7,7 +7,7 @@
   const profile = M.profile(saved);
   let run, paused = false, last = 0, accumulator = 0, charge = null, drag = null, sound = false, audio;
   let width = 1, height = 1, lastCollected = 0, lastHit = 0, particles = [], heroPitch = 0;
-  const keys = new Set(), fingers = new Set();
+  const keys = new Set(), fingers = new Set(), diveFingers = new Set();
   const picture = new Image(); picture.src = 'assets/pywel-panorama.png';
   const set = (id, text) => { if ($(id).textContent !== String(text)) $(id).textContent = text; };
   const number = x => Math.floor(x).toLocaleString('ko-KR');
@@ -15,6 +15,13 @@
     try { localStorage.setItem(STORAGE, JSON.stringify(profile)); return true; }
     catch { set('flight-save-status', '브라우저 저장이 차단되어 이번 기록은 창을 닫으면 사라집니다.'); return false; }
   }
+  $('flight-character').value = profile.character;
+  function characterUI() { set('flight-greeting', `${profile.character === 'damian' ? '데미안' : '클리프'}, 오늘은 어디까지 날아오를 수 있을까.`); }
+  $('flight-character').onchange = () => {
+    profile.character = $('flight-character').value === 'damian' ? 'damian' : 'kliff';
+    release(); characterUI(); save();
+  };
+  characterUI();
   function tone(frequency = 550, duration = .1) {
     if (!sound || !audio) return;
     const oscillator = audio.createOscillator(), gain = audio.createGain();
@@ -45,7 +52,7 @@
     };
   }
   $('journey-stops').innerHTML = M.REGIONS.map((r, i) => `<span id="region-${i}">${r.short}<b>${number(r.at)}m</b></span>`).join('') + '<span>여정 완주<b>5,000m</b></span>';
-  function release() { keys.clear(); fingers.clear(); charge = null; drag = null; $('flight-glide').classList.remove('active'); }
+  function release() { keys.clear(); fingers.clear(); diveFingers.clear(); charge = null; drag = null; $('flight-glide').classList.remove('active'); $('flight-dive').classList.remove('active'); }
   function reset() {
     release(); run = M.create(profile, 17 + profile.runs * 73); paused = false; accumulator = 0; last = 0;
     particles = []; heroPitch = 0; lastCollected = 0; lastHit = 0;
@@ -84,10 +91,12 @@
     $('flight-ready').hidden = run.phase !== 'ready'; $('flight-launch').disabled = run.phase !== 'ready';
     $('flight-angle').disabled = run.phase !== 'ready'; $('flight-pause').disabled = !active || paused;
     $('flight-glide').disabled = !flying || paused || run.stamina <= 0;
+    $('flight-dive').disabled = !flying || paused;
+    $('flight-dive').classList.toggle('active', flying && !paused && diving());
     $('flight-boost').disabled = !flying || paused || run.stamina < 24 || run.cooldown > 0;
     $('flight-glide').classList.toggle('active', run.gliding && !paused);
     const text = paused ? '잠시 쉬는 중' : run.phase === 'ready' ? '도약을 준비하세요' : run.phase === 'over' ? '다음 모험을 준비하세요' :
-      run.noticeTime > 0 ? run.notice : run.phase === 'sliding' ? '착지 중…' : run.stamina <= 0 ? '스태미너 소진 · 착지에 대비하세요' : run.stalled ? '속도 부족 · 손을 놓고 하강해 가속하세요' : run.gliding ? (run.vy > 0 ? '상승 중 · 속도를 높이로 바꾸는 중' : '기수 들기 · 누르고 있으면 상승으로 전환') : run.vy < 0 ? '하강 가속 · SPACE를 눌러 상승하세요' : '상승 중 · 다음 하강을 기다리세요';
+      run.noticeTime > 0 ? run.notice : run.phase === 'sliding' ? '착지 중…' : diving() ? '급강하 · 기수를 내려 속도를 모으는 중' : run.stamina <= 0 ? '스태미너 소진 · 착지에 대비하세요' : run.stalled ? '속도 부족 · 손을 놓고 하강해 가속하세요' : run.gliding ? (run.vy > 0 ? '상승 중 · 속도를 높이로 바꾸는 중' : '기수 들기 · 누르고 있으면 상승으로 전환') : run.vy < 0 ? '하강 가속 · SPACE를 눌러 상승하세요' : '상승 중 · 다음 하강을 기다리세요';
     set('flight-state', text);
     $('journey-progress').style.width = Math.min(100, Math.max(run.x, profile.best) / M.GOAL * 100) + '%';
     M.REGIONS.forEach((r, i) => $('region-' + i).classList.toggle('active', r.at <= Math.max(run.x, profile.best)));
@@ -104,11 +113,14 @@
   });
   for (const event of ['pointercancel', 'lostpointercapture']) $('flight-launch').addEventListener(event, () => { charge = null; });
   $('flight-launch').onclick = e => { if (e.detail === 0) start(); };
-  $('flight-glide').addEventListener('pointerdown', e => {
-    if (paused || run.phase !== 'flying') return;
-    fingers.add(e.pointerId); e.currentTarget.setPointerCapture(e.pointerId); e.preventDefault();
-  });
-  for (const event of ['pointerup', 'pointercancel', 'lostpointercapture']) $('flight-glide').addEventListener(event, e => fingers.delete(e.pointerId));
+  function diving() { return diveFingers.size > 0 || keys.has('ArrowDown') || keys.has('KeyS'); }
+  for (const [id, held] of [['flight-glide', fingers], ['flight-dive', diveFingers]]) {
+    $(id).addEventListener('pointerdown', e => {
+      if (paused || run.phase !== 'flying' || e.currentTarget.disabled) return;
+      held.add(e.pointerId); e.currentTarget.setPointerCapture(e.pointerId); e.preventDefault();
+    });
+    for (const event of ['pointerup', 'pointercancel', 'lostpointercapture']) $(id).addEventListener(event, e => held.delete(e.pointerId));
+  }
   $('flight-boost').onclick = propel; $('flight-pause').onclick = () => pause(true); $('flight-resume').onclick = () => pause(false);
   $('flight-again').onclick = () => { reset(); $('flight-launch').focus({ preventScroll: true }); };
   $('flight-camp').onclick = () => {
@@ -170,29 +182,31 @@
   }
   function hero(x, y, now, dt) {
     ctx.save(); ctx.translate(x, y);
+    const damian = profile.character === 'damian';
     const flying = run.phase === 'flying', flutter = Math.sin(now / 110) * 4;
     const targetPitch = flying ? -run.pitch : 0;
     heroPitch += (targetPitch - heroPitch) * (1 - Math.exp(-10 * dt));
     ctx.rotate(heroPitch);
     ctx.shadowColor = '#15272280'; ctx.shadowBlur = 7; ctx.shadowOffsetY = 4;
     if (flying) {
-      ctx.save(); ctx.scale(1, run.gliding ? 1 : .55);
+      ctx.save(); ctx.scale(1, run.gliding ? 1 : diving() ? .3 : .55);
       polygon([[-2,-8],[-63,-34+flutter],[-48,-3],[-55,-11],[-30,10],[-37,1],[-14,16],[10,3]], '#15252c', '#728582');
       polygon([[5,-9],[26,-43-flutter],[43,-56],[35,-32],[52,-41],[31,-10],[41,-19],[18,12]], '#25353c', '#839090');
       ctx.restore();
     }
-    polygon([[-7,-14],[-20,5],[-40,14+flutter],[-22,20],[-10,10],[6,-1]], '#823c32', '#a5664c');
+    polygon([[-7,-14],[-20,5],[-40,14+flutter],[-22,20],[-10,10],[6,-1]], damian ? '#315c80' : '#823c32', damian ? '#86b7ca' : '#a5664c');
     ctx.shadowColor = 'transparent'; ctx.lineCap = 'round';
     ctx.strokeStyle = '#26302f'; ctx.lineWidth = 7;
     ctx.beginPath(); ctx.moveTo(-3,8); ctx.lineTo(flying ? -17 : -6, flying ? 16 : 26); ctx.lineTo(flying ? -28 : -13, flying ? 15 : 26); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(5,8); ctx.lineTo(flying ? -4 : 8, flying ? 24 : 27); ctx.lineTo(flying ? -15 : 14, flying ? 27 : 27); ctx.stroke();
-    polygon([[-8,-15],[9,-13],[13,8],[-6,13]], '#60706d', '#b0b6a2');
+    polygon([[-8,-15],[9,-13],[13,8],[-6,13]], damian ? '#899ba7' : '#60706d', '#b0b6a2');
     polygon([[-9,-17],[-14,-10],[-3,-6],[7,-12],[12,-10],[10,-19],[2,-22]], '#a2a99a');
     ctx.strokeStyle = '#768078'; ctx.lineWidth = 6;
     ctx.beginPath(); ctx.moveTo(8,-8); ctx.lineTo(flying ? 21 : 15, flying ? -1 : 7); ctx.lineTo(flying ? 27 : 9, flying ? -4 : 11); ctx.stroke();
     ctx.fillStyle = '#c29a79'; ctx.beginPath(); ctx.ellipse(3,-27,7,9,0,0,Math.PI*2); ctx.fill();
-    polygon([[-5,-29],[-2,-37],[6,-37],[12,-31],[6,-32],[7,-26],[3,-30]], '#333735');
-    polygon([[0,-24],[9,-25],[8,-18],[4,-17]], '#46483d');
+    if (damian) polygon([[-3,-32],[-12,-27],[-22,-12+flutter],[-12,-17],[-6,-26]], '#b6a075', '#ddcda1');
+    polygon([[-5,-29],[-2,-37],[6,-37],[12,-31],[6,-32],[7,-26],[3,-30]], damian ? '#d6c394' : '#333735');
+    if (!damian) polygon([[0,-24],[9,-25],[8,-18],[4,-17]], '#46483d');
     ctx.fillStyle = '#d0b17c'; ctx.fillRect(-7,4,18,3); ctx.fillStyle = '#a47c45'; ctx.fillRect(1,3,4,5);
     ctx.strokeStyle = '#bbc4b3'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-10,-19); ctx.lineTo(-22,19); ctx.stroke();
     ctx.strokeStyle = '#d5b278'; ctx.beginPath(); ctx.moveTo(-17,-8); ctx.lineTo(-7,-4); ctx.stroke();
@@ -253,7 +267,7 @@
     const dt = last ? Math.min((now-last)/1000,.05) : 0; last=now;
     if (!paused && !document.hidden) {
       accumulator += dt;
-      while(accumulator>=1/120){M.step(run,1/120,{glide:fingers.size>0||keys.has('Space')||keys.has('ArrowUp')||keys.has('KeyW'),dive:keys.has('ArrowDown')||keys.has('KeyS')});accumulator-=1/120;}
+      while(accumulator>=1/120){M.step(run,1/120,{glide:fingers.size>0||keys.has('Space')||keys.has('ArrowUp')||keys.has('KeyW'),dive:diving()});accumulator-=1/120;}
       if(run.collected>lastCollected){burst(run.x,run.y,'#e6d793',9);tone(780);lastCollected=run.collected;}
       if(run.hit>lastHit){burst(run.x,run.y,'#c4b59a',12);tone(130,.18);}lastHit=run.hit;
       if(run.phase==='over') complete();

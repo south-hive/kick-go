@@ -10,7 +10,7 @@
     { id: 'stamina', name: '회색갈기의 지구력', icon: '◈', text: '최대 스태미너 +22', base: 45 },
     { id: 'leap', name: '힘의 도약', icon: '↗', text: '도약 속도 +12', base: 40 },
     { id: 'wing', name: '까마귀의 날개', icon: '羽', text: '기수 들기 소모 감소 · 공기 저항 감소', base: 60 },
-    { id: 'abyss', name: '심연의 힘', icon: '✧', text: '공중 추진력 · 상승력 증가', base: 65 },
+    { id: 'abyss', name: '섭리의 힘', icon: '✧', text: '공중 추진력 · 상승력 증가', base: 65 },
     { id: 'magnet', name: '심연의 인력', icon: '◎', text: '수집 반경 +14m', base: 35 },
     { id: 'meal', name: '야영지 요리', icon: '♨', text: '보급품 스태미너 회복 +7', base: 40 },
   ];
@@ -25,7 +25,7 @@
   const integer = (x, max) => Math.floor(clamp(finite(x), 0, max));
   function profile(value) {
     const p = value && typeof value === 'object' ? value : {};
-    return { version: 1, silver: integer(p.silver, 10000000), best: clamp(finite(p.best), 0, GOAL),
+    return { version: 1, character: p.character === 'damian' ? 'damian' : 'kliff', silver: integer(p.silver, 10000000), best: clamp(finite(p.best), 0, GOAL),
       runs: integer(p.runs, 1000000), total: clamp(finite(p.total), 0, 1000000000),
       upgrades: Object.fromEntries(GEAR.map(g => [g.id, integer(p.upgrades?.[g.id], 5)])) };
   }
@@ -67,7 +67,7 @@
     run.stamina -= 24; run.vx = Math.min(250, run.vx + 30 + run.levels.abyss * 8);
     run.vy = Math.min(75, run.vy + 16 + run.levels.abyss * 3);
     run.cooldown = 1.2; run.boostTrail = .7;
-    run.notice = '심연 추진'; run.noticeTime = 1;
+    run.notice = '섭리의 힘 · 대시'; run.noticeTime = 1;
     return true;
   }
   function step(run, dt, input = {}) {

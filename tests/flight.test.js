@@ -120,3 +120,13 @@ test('identical seeds give reproducible courses and completed flights stop updat
   const r=fly();const before=JSON.stringify(r);M.step(r,.05,{glide:true});assert.equal(JSON.stringify(r),before);
   assert.equal(M.region(1000).short,'페일룬');assert.equal(M.region(2500).short,'붉은사막');
 });
+
+test('character choice survives saves, accepts old saves, and leaves flight performance identical', () => {
+  assert.equal(M.profile({ silver: 77 }).character, 'kliff');
+  assert.equal(M.profile({ character: 'unknown' }).character, 'kliff');
+  const p = M.profile({ character: 'damian', silver: 77, upgrades: { wing: 2 } });
+  assert.deepEqual(M.profile(JSON.parse(JSON.stringify(p))), p);
+  const kliff = fly({ ...p, character: 'kliff' }, cycleControl());
+  const damian = fly(p, cycleControl());
+  assert.deepEqual(damian, kliff);
+});

@@ -72,3 +72,31 @@ test('drag launch and corrupt or unavailable storage remain playable', async ({ 
   await expect(page.locator('#flight-launch')).toBeDisabled();
   await expect.poll(async()=>+await page.locator('#flight-distance').textContent()).toBeGreaterThan(1);
 });
+
+test('character selection persists and touch dive releases on pause', async ({ page }) => {
+  await page.goto('/flight.html');
+  await page.locator('#flight-character').selectOption('damian');
+  await expect(page.locator('#flight-greeting')).toContainText('데미안');
+  await page.reload();
+  await expect(page.locator('#flight-character')).toHaveValue('damian');
+  await expect(page.locator('#flight-boost')).toContainText('섭리의 힘');
+  await page.locator('#flight-launch').click();
+  await page.keyboard.down('ArrowUp');
+  await expect(page.locator('#flight-glide')).toHaveClass(/active/);
+  await page.keyboard.up('ArrowUp');
+  const dive = page.locator('#flight-dive');
+  const box = await dive.boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await expect(dive).toHaveClass(/active/);
+  await page.keyboard.press('Escape');
+  await expect(dive).not.toHaveClass(/active/);
+  await page.mouse.up();
+  await page.locator('#flight-resume').click();
+  await expect(dive).toBeEnabled();
+  await expect(dive).not.toHaveClass(/active/);
+  await page.keyboard.down('ArrowDown');
+  await expect(dive).toHaveClass(/active/);
+  await page.keyboard.up('ArrowDown');
+  await expect(dive).not.toHaveClass(/active/);
+});
