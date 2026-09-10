@@ -187,6 +187,42 @@
     ctx.beginPath(); points.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath();
     ctx.fillStyle = fill; ctx.fill(); if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 1; ctx.stroke(); }
   }
+  // Simplified from Pearl Abyss's March 2025 Damiane promotional portrait:
+  // long dark waves and crown braid, silver armor with gold trim, pale sleeves.
+  function drawDamiane(flying, flutter) {
+    ctx.shadowColor = 'transparent'; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    // Long hair flows behind the head instead of Kliff's short-haired outline.
+    polygon([[-5,-37],[-14,-29],[-14,-14],[-25,-4+flutter],[-23,6],[-35,16+flutter],[-18,13],[-8,4],[2,-20]], '#10171d', '#455058');
+    polygon([[-7,-3],[-22,11],[-28,25+flutter],[-9,20],[5,9]], '#cbc7af', '#8b805c');
+    ctx.strokeStyle = '#33383a'; ctx.lineWidth = 6;
+    ctx.beginPath(); ctx.moveTo(-3,9); ctx.lineTo(flying ? -17 : -5, flying ? 17 : 24); ctx.lineTo(flying ? -28 : -11, flying ? 17 : 28); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(5,9); ctx.lineTo(flying ? -3 : 8, flying ? 23 : 24); ctx.lineTo(flying ? -15 : 13, flying ? 27 : 28); ctx.stroke();
+    polygon([[-7,-17],[7,-17],[11,-6],[7,8],[10,14],[-9,14],[-5,3],[-9,-7]], '#aeb9b6', '#d2b367');
+    polygon([[-5,-14],[3,-15],[6,-5],[2,5],[-3,5]], '#4b5556', '#b99a51');
+    ctx.strokeStyle = '#e0c679'; ctx.lineWidth = 1.3;
+    ctx.beginPath(); ctx.moveTo(-5,-10); ctx.lineTo(5,0); ctx.moveTo(5,-10); ctx.lineTo(-4,0); ctx.stroke();
+    // Pale sleeve, gilded gauntlet, and a broad engraved shoulder plate.
+    ctx.strokeStyle = '#d4d1bd'; ctx.lineWidth = 5;
+    ctx.beginPath(); ctx.moveTo(7,-10); ctx.lineTo(flying ? 19 : 14, flying ? -2 : 4); ctx.lineTo(flying ? 27 : 10, flying ? -5 : 12); ctx.stroke();
+    polygon([[4,-20],[13,-19],[19,-12],[15,-6],[6,-9],[1,-14]], '#a9b4b3', '#e6c572');
+    polygon([[6,-18],[14,-16],[16,-12],[11,-10],[6,-13]], '#515e60', '#bfa057');
+    ctx.fillStyle = '#e7cb7d'; ctx.beginPath(); ctx.arc(10,-14,1.8,0,Math.PI*2); ctx.fill();
+    ctx.fillRect(-7,6,15,3); ctx.fillStyle = '#547b77'; ctx.beginPath(); ctx.arc(1,7,2.5,0,Math.PI*2); ctx.fill();
+    polygon([[-3,-23],[-3,-17],[6,-17],[7,-23]], '#bda08a');
+    ctx.fillStyle = '#d3b5a0'; ctx.beginPath(); ctx.ellipse(3,-28,6.5,9,.08,0,Math.PI*2); ctx.fill();
+    polygon([[-5,-27],[-8,-33],[-4,-39],[4,-41],[11,-36],[11,-29],[7,-34],[1,-35],[-3,-31],[-3,-21],[-8,-14],[-7,-25]], '#141a20', '#3e474e');
+    // Crown braid catches just enough light to read as black hair at game scale.
+    ctx.strokeStyle = '#51545a'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(-6,-34); ctx.quadraticCurveTo(0,-42,8,-35); ctx.stroke();
+    for (let i=0;i<4;i++) { ctx.fillStyle = '#252b31'; ctx.beginPath(); ctx.ellipse(-3+i*2.7,-36-Math.sin(i/3*Math.PI)*2,1.8,1,-.5,0,Math.PI*2); ctx.fill(); }
+    ctx.strokeStyle = '#4a5157'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(-10,-27); ctx.bezierCurveTo(-15,-17,-8,-8,-22,4+flutter); ctx.bezierCurveTo(-28,9,-18,11,-28,16+flutter); ctx.stroke();
+    ctx.fillStyle = '#283b35'; ctx.fillRect(6,-29,2,1);
+    ctx.strokeStyle = '#8e6254'; ctx.beginPath(); ctx.moveTo(5,-23); ctx.lineTo(8,-23); ctx.stroke();
+    ctx.strokeStyle = '#ddc17e'; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(-2,-26); ctx.lineTo(-3,-19); ctx.stroke();
+    ctx.fillStyle = '#dbcdb0'; ctx.beginPath(); ctx.arc(-3,-18,1.5,0,Math.PI*2); ctx.fill();
+  }
   function hero(x, y, now, dt) {
     ctx.save(); ctx.translate(x, y);
     const damian = profile.character === 'damian';
@@ -201,22 +237,24 @@
       polygon([[5,-9],[26,-43-flutter],[43,-56],[35,-32],[52,-41],[31,-10],[41,-19],[18,12]], '#25353c', '#839090');
       ctx.restore();
     }
-    polygon([[-7,-14],[-20,5],[-40,14+flutter],[-22,20],[-10,10],[6,-1]], damian ? '#315c80' : '#823c32', damian ? '#86b7ca' : '#a5664c');
+    if (damian) drawDamiane(flying, flutter);
+    else {
+    polygon([[-7,-14],[-20,5],[-40,14+flutter],[-22,20],[-10,10],[6,-1]], '#823c32', '#a5664c');
     ctx.shadowColor = 'transparent'; ctx.lineCap = 'round';
     ctx.strokeStyle = '#26302f'; ctx.lineWidth = 7;
     ctx.beginPath(); ctx.moveTo(-3,8); ctx.lineTo(flying ? -17 : -6, flying ? 16 : 26); ctx.lineTo(flying ? -28 : -13, flying ? 15 : 26); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(5,8); ctx.lineTo(flying ? -4 : 8, flying ? 24 : 27); ctx.lineTo(flying ? -15 : 14, flying ? 27 : 27); ctx.stroke();
-    polygon([[-8,-15],[9,-13],[13,8],[-6,13]], damian ? '#899ba7' : '#60706d', '#b0b6a2');
+    polygon([[-8,-15],[9,-13],[13,8],[-6,13]], '#60706d', '#b0b6a2');
     polygon([[-9,-17],[-14,-10],[-3,-6],[7,-12],[12,-10],[10,-19],[2,-22]], '#a2a99a');
     ctx.strokeStyle = '#768078'; ctx.lineWidth = 6;
     ctx.beginPath(); ctx.moveTo(8,-8); ctx.lineTo(flying ? 21 : 15, flying ? -1 : 7); ctx.lineTo(flying ? 27 : 9, flying ? -4 : 11); ctx.stroke();
     ctx.fillStyle = '#c29a79'; ctx.beginPath(); ctx.ellipse(3,-27,7,9,0,0,Math.PI*2); ctx.fill();
-    if (damian) polygon([[-3,-32],[-12,-27],[-22,-12+flutter],[-12,-17],[-6,-26]], '#b6a075', '#ddcda1');
-    polygon([[-5,-29],[-2,-37],[6,-37],[12,-31],[6,-32],[7,-26],[3,-30]], damian ? '#d6c394' : '#333735');
-    if (!damian) polygon([[0,-24],[9,-25],[8,-18],[4,-17]], '#46483d');
+    polygon([[-5,-29],[-2,-37],[6,-37],[12,-31],[6,-32],[7,-26],[3,-30]], '#333735');
+    polygon([[0,-24],[9,-25],[8,-18],[4,-17]], '#46483d');
     ctx.fillStyle = '#d0b17c'; ctx.fillRect(-7,4,18,3); ctx.fillStyle = '#a47c45'; ctx.fillRect(1,3,4,5);
     ctx.strokeStyle = '#bbc4b3'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-10,-19); ctx.lineTo(-22,19); ctx.stroke();
     ctx.strokeStyle = '#d5b278'; ctx.beginPath(); ctx.moveTo(-17,-8); ctx.lineTo(-7,-4); ctx.stroke();
+    }
     if (run.boostTrail > 0) {
       ctx.globalAlpha = run.boostTrail; polygon([[-14,-5],[-92+flutter,6],[-17,11]], '#84e4d4');
     }

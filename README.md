@@ -8,7 +8,7 @@
 
 ## 릴리즈 표시
 
-게임 선택·알까기·비행 화면 하단에 버전을 표시합니다. 현재 릴리즈는 `v1.2.0`이며 GitHub Pages 배포 시 `v1.2.0 · 커밋7자리 · 배포 실행번호.재시도번호`로 자동 표시됩니다. 배포마다 JS/CSS URL에도 같은 식별자를 넣어 이전 파일의 캐시와 구분합니다. 로컬 파일은 `v1.2.0 · 로컬`로 표시합니다. 버전을 올릴 때는 `package.json`과 `package-lock.json`을 함께 갱신하고 `npm run build:release`를 실행합니다.
+게임 선택·알까기·비행 화면 하단에 버전을 표시합니다. 현재 릴리즈는 `v1.2.1`이며 GitHub Pages 배포 시 `v1.2.1 · 커밋7자리 · 배포 실행번호.재시도번호`로 자동 표시됩니다. 배포마다 JS/CSS URL에도 같은 식별자를 넣어 이전 파일의 캐시와 구분합니다. 로컬 파일은 `v1.2.1 · 로컬`로 표시합니다. 버전을 올릴 때는 `package.json`과 `package-lock.json`을 함께 갱신하고 `npm run build:release`를 실행합니다.
 
 ## 실행
 
@@ -83,3 +83,5 @@ APK 출력: `android/app/build/outputs/apk/debug/app-debug.apk`
 ## 검증
 
 `npm test`로 알까기 물리/온라인 통신과 비행 궤적·스태미너·수집·강화·보상 중복 방지·저장 데이터 복구를 검증합니다. `npx playwright install chromium` 후 `npm run test:browser`로 게임 선택·비행/착지/강화·휴대폰/데스크톱 배치와 알까기의 실제 공방·새로고침 복구·타격점 UI를 검증합니다. GitHub Actions에서는 Chromium 설치를 자동으로 수행합니다. 실제 Android 빌드와 기기 터치 검증은 별도로 필요합니다.
+
+데미안의 2D 외형은 [펄어비스 공식 홍보 이미지](https://s1.pearlcdn.com/cd/brand/media_GLOBAL/2025/03/19/387b0ae6ee220250319043154727.jpg)의 긴 흑발·땋은 머리·금장 은빛 갑옷을 참고해 Canvas 도형으로 단순화했습니다.

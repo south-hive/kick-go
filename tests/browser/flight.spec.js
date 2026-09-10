@@ -78,6 +78,7 @@ test('character selection persists and touch dive releases on pause', async ({ p
   await page.goto('/flight.html');
   await page.locator('#character-damian').click();
   await expect(page.locator('#flight-greeting')).toContainText('데미안');
+  await page.locator('.flight-stage').screenshot({ path: 'test-results/damiane-ready.png' });
   await page.reload();
   await expect(page.locator('#character-damian')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('#character-kliff')).toHaveAttribute('aria-pressed', 'false');
