@@ -5,7 +5,7 @@ const path = require('node:path');
 const { randomBytes } = require('node:crypto');
 const { WebSocketServer } = require('ws');
 const { Room, VERSION } = require('./multiplayer');
-const files = Object.fromEntries(['index.html', 'alkkagi.html', 'flight.html', 'style.css', 'arcade.css', 'game.js', 'physics.js', 'online.js', 'config.js', 'hub.js', 'flight-model.js', 'flight.js', 'assets/pywel-panorama.png', 'assets/damiane-sprites-v2.png'].map(f => ['/' + f, f]));
+const files = Object.fromEntries(['index.html', 'robots.html', 'robots.css', 'robot-model.js', 'robots.js', 'alkkagi.html', 'flight.html', 'style.css', 'arcade.css', 'game.js', 'physics.js', 'online.js', 'config.js', 'hub.js', 'flight-model.js', 'flight.js', 'assets/pywel-panorama.png', 'assets/damiane-sprites-v2.png'].map(f => ['/' + f, f]));
 files['/'] = 'index.html';
 const types = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.png': 'image/png' };
 

@@ -11,7 +11,7 @@ if (!/^\d+\.\d+\.\d+$/.test(version) || (sha && !/^[a-f0-9]{40}$/i.test(sha)) ||
 const build = sha ? `${sha.slice(0, 7)}${run ? ` · 배포 ${run}.${attempt}` : ''}` : '로컬';
 const label = `v${version} · ${build}`;
 const assetVersion = sha ? `${version}-${sha}-${run || '0'}-${attempt}` : version;
-for (const file of ['index.html', 'flight.html', 'alkkagi.html']) {
+for (const file of ['index.html', 'flight.html', 'alkkagi.html', 'robots.html']) {
   const target = path.join(root, file);
   let html = fs.readFileSync(target, 'utf8');
   if (!html.includes('data-release>')) throw Error(`Missing release label: ${file}`);

@@ -39,7 +39,7 @@ public class MainActivity extends Activity {
                 String path = request.getUrl().getPath();
                 if (!HOST.equals(request.getUrl().getHost()) || path == null) return null;
                 String file = path.equals("/") ? "index.html" : path.substring(1);
-                if (!(file.equals("index.html") || file.equals("alkkagi.html") || file.equals("flight.html") || file.equals("arcade.css") || file.equals("hub.js") || file.equals("flight-model.js") || file.equals("flight.js") || file.equals("assets/pywel-panorama.png") || file.equals("assets/damiane-sprites-v2.png") || file.equals("style.css") || file.equals("physics.js") || file.equals("game.js") || file.equals("online.js") || file.equals("config.js"))) {
+                if (!(file.equals("index.html") || file.equals("robots.html") || file.equals("robots.css") || file.equals("robot-model.js") || file.equals("robots.js") || file.equals("alkkagi.html") || file.equals("flight.html") || file.equals("arcade.css") || file.equals("hub.js") || file.equals("flight-model.js") || file.equals("flight.js") || file.equals("assets/pywel-panorama.png") || file.equals("assets/damiane-sprites-v2.png") || file.equals("style.css") || file.equals("physics.js") || file.equals("game.js") || file.equals("online.js") || file.equals("config.js"))) {
                     return new WebResourceResponse("text/plain", "UTF-8", new java.io.ByteArrayInputStream(new byte[0]));
                 }
                 String type = file.endsWith(".png") ? "image/png" : file.endsWith(".js") ? "text/javascript" : file.endsWith(".css") ? "text/css" : "text/html";
