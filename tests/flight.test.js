@@ -146,3 +146,32 @@ test('neutral input glides gently while up climbs and down dives', () => {
   assert.equal(down.stamina, down.maxStamina);
   assert.ok(up.stamina < up.maxStamina);
 });
+
+test('tuned gravity accelerates descent every second and stronger gravity falls faster', () => {
+  const fall = gravity => {
+    const r = M.create(M.profile(), 17, { gravity, startHeight: 500, glideLift: 0, neutralDrag: 0 });
+    M.launch(r); r.vx = 80; r.vy = 0; r.items = []; r.ruins = [];
+    for (let i=0;i<120;i++) M.step(r,1/120);
+    const first = r.vy;
+    for (let i=0;i<120;i++) M.step(r,1/120);
+    assert.ok(Math.abs(first + gravity) < 1e-8);
+    assert.ok(Math.abs(r.vy + 2 * gravity) < 1e-8);
+    assert.ok(Math.abs(r.y - (500 - gravity * 2)) < 1e-8);
+    return r;
+  };
+  const low = fall(10), high = fall(30);
+  assert.ok(high.y < low.y); assert.ok(high.vy < low.vy);
+});
+test('tuning sanitizes saved values and applies launch, height and dash settings', () => {
+  const sanitized = M.tuning({ gravity: Infinity, startHeight: -100, neutralDrag: -1, pullRate: 99 });
+  assert.equal(sanitized.gravity, 14); assert.equal(sanitized.startHeight, 30);
+  assert.equal(sanitized.neutralDrag, 0); assert.equal(sanitized.pullRate, 3);
+  const settings = M.tuning({ startHeight: 450, launchSpeed: 100, launchPower: 80, boostSpeed: 40, boostLift: 20 });
+  assert.deepEqual(M.tuning(JSON.parse(JSON.stringify(settings))), settings);
+  const r = M.create(M.profile(), 17, settings);
+  assert.equal(r.y, 450); assert.equal(r.maxHeight, 450);
+  M.launch(r, 15, 1); assert.ok(Math.abs(Math.hypot(r.vx, r.vy) - 180) < 1e-8);
+  const vx = r.vx, vy = r.vy; M.boost(r);
+  assert.equal(r.vx, vx + 40); assert.equal(r.vy, vy + 20);
+  settings.gravity = 60; assert.equal(r.tuning.gravity, 14);
+});

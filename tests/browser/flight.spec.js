@@ -104,3 +104,41 @@ test('character selection persists and touch dive releases on pause', async ({ p
   await page.keyboard.up('ArrowDown');
   await expect(dive).not.toHaveClass(/active/);
 });
+
+test('tuning persists and progress reset clears only progress after confirmation', async ({ page }) => {
+  await page.goto('/flight.html');
+  await page.evaluate(() => {
+    localStorage.setItem('unrelated-game', 'keep');
+    localStorage.setItem('crimson-flight:v1', JSON.stringify({ character: 'damian', silver: 800, best: 1200, runs: 8, total: 3600, upgrades: { wing: 3 } }));
+  });
+  await page.reload();
+  await page.locator('#tune-gravity').fill('25');
+  await page.locator('#tune-startHeight').fill('450');
+  await page.locator('#tune-glideLift').fill('0');
+  await page.locator('#tuning-form button[type=submit]').click();
+  await expect(page.locator('#flight-altitude')).toContainText('450m');
+  await expect(page.locator('#flight-silver')).toHaveText('800');
+  await page.reload();
+  await expect(page.locator('#tune-gravity')).toHaveValue('25');
+  await expect(page.locator('#tune-glideLift')).toHaveValue('0');
+  await expect(page.locator('#flight-altitude')).toContainText('450m');
+  page.once('dialog', dialog => dialog.dismiss());
+  await page.locator('#progress-reset').click();
+  await expect(page.locator('#flight-silver')).toHaveText('800');
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('#progress-reset').click();
+  await expect(page.locator('#flight-silver')).toHaveText('0');
+  await expect(page.locator('#flight-best')).toHaveText('0');
+  await expect(page.locator('#level-wing')).toHaveText('◇◇◇◇◇');
+  await expect(page.locator('#character-damian')).toHaveAttribute('aria-pressed', 'true');
+  await page.reload();
+  await expect(page.locator('#flight-silver')).toHaveText('0');
+  await expect(page.locator('#tune-gravity')).toHaveValue('25');
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('crimson-flight:v1')));
+  expect(saved.runs).toBe(0); expect(saved.total).toBe(0);
+  expect(await page.evaluate(() => localStorage.getItem('unrelated-game'))).toBe('keep');
+  await page.locator('#tuning-defaults').click();
+  await expect(page.locator('#tune-gravity')).toHaveValue('14');
+  await expect(page.locator('#flight-altitude')).toContainText('240m');
+  await page.locator('.flight-tuning').screenshot({path:'test-results/flight-tuning.png'});
+});

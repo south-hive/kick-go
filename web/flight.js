@@ -5,6 +5,10 @@
   let saved;
   try { saved = JSON.parse(localStorage.getItem(STORAGE)); } catch { saved = null; }
   const profile = M.profile(saved);
+  const TUNING_STORAGE = 'crimson-flight:tuning:v1';
+  let savedTuning;
+  try { savedTuning = JSON.parse(localStorage.getItem(TUNING_STORAGE)); } catch {}
+  let tuning = M.tuning(savedTuning);
   let run, paused = false, last = 0, accumulator = 0, charge = null, drag = null, sound = false, audio;
   let width = 1, height = 1, lastCollected = 0, lastHit = 0, particles = [], heroPitch = 0;
   const keys = new Set(), fingers = new Set(), diveFingers = new Set();
@@ -15,6 +19,38 @@
     try { localStorage.setItem(STORAGE, JSON.stringify(profile)); return true; }
     catch { set('flight-save-status', '브라우저 저장이 차단되어 이번 기록은 창을 닫으면 사라집니다.'); return false; }
   }
+  for (const param of M.TUNING) {
+    const label = document.createElement('label');
+    label.innerHTML = `<span>${param.name} <small>${param.unit}</small></span><input id="tune-${param.id}" type="number" min="${param.min}" max="${param.max}" step="any" required aria-describedby="tune-help-${param.id}"><small id="tune-help-${param.id}">${param.help}</small>`;
+    $('tuning-fields').append(label);
+  }
+  function tuningUI() {
+    for (const param of M.TUNING) $('tune-' + param.id).value = +tuning[param.id].toFixed(6);
+  }
+  function applyTuning(next) {
+    tuning = M.tuning(next); tuningUI(); reset();
+    try { localStorage.setItem(TUNING_STORAGE, JSON.stringify(tuning)); set('tuning-status', '튜닝 저장 완료 · 새 설정으로 도약하세요.'); }
+    catch { set('tuning-status', '설정은 적용됐지만 브라우저 저장이 차단되어 새로고침하면 사라집니다.'); }
+  }
+  $('tuning-form').onsubmit = e => {
+    e.preventDefault();
+    if (!$('tuning-form').reportValidity()) return;
+    applyTuning(Object.fromEntries(M.TUNING.map(p => [p.id, $('tune-' + p.id).valueAsNumber])));
+  };
+  $('tuning-defaults').onclick = () => applyTuning();
+  $('tuning-retry').onclick = () => { reset(); set('tuning-status', '적용 중인 설정으로 다시 시작합니다. 입력한 미적용 값은 적용 버튼을 눌러주세요.'); };
+  $('progress-reset').onclick = () => {
+    const wasPaused = paused;
+    if (['flying', 'sliding'].includes(run.phase)) { paused = true; release(); }
+    const confirmed = window.confirm('은화, 모든 강화, 최고 기록과 비행 횟수를 지우고 처음부터 시작할까요? 캐릭터와 튜닝은 유지됩니다.');
+    if (!confirmed) { paused = wasPaused; last = 0; return; }
+    Object.assign(profile, M.profile({ character: profile.character }));
+    const stored = save(); reset();
+    if (stored) set('flight-save-status', '진행사항 초기화 완료 · 은화와 강화 없이 새로 시작합니다.');
+    set('tuning-status', '진행사항을 초기화했습니다. 캐릭터와 튜닝은 유지됩니다.');
+  };
+  tuningUI();
+  if (savedTuning) set('tuning-status', '이 브라우저에 저장된 튜닝을 불러왔습니다.');
   function characterUI() {
     const name = profile.character === 'damian' ? '데미안' : '클리프';
     set('flight-greeting', `${name}, 오늘은 어디까지 날아오를 수 있을까.`);
@@ -53,7 +89,7 @@
     $('flight-upgrades').append(article);
     $('buy-' + gear.id).onclick = () => {
       if (!['ready', 'over'].includes(run.phase) || !M.buy(profile, gear.id)) return;
-      const stored = save(); tone(730); if (run.phase === 'ready') run = M.create(profile, 17 + profile.runs * 73);
+      const stored = save(); tone(730); if (run.phase === 'ready') run = M.create(profile, 17 + profile.runs * 73, tuning);
       shop(); hud();
       if (stored) set('flight-save-status', `${gear.name} ${profile.upgrades[gear.id]}단계 강화 완료 · 다음 비행에 적용됩니다.`);
     };
@@ -61,7 +97,7 @@
   $('journey-stops').innerHTML = M.REGIONS.map((r, i) => `<span id="region-${i}">${r.short}<b>${number(r.at)}m</b></span>`).join('') + '<span>여정 완주<b>5,000m</b></span>';
   function release() { keys.clear(); fingers.clear(); diveFingers.clear(); charge = null; drag = null; $('flight-glide').classList.remove('active'); $('flight-dive').classList.remove('active'); }
   function reset() {
-    release(); run = M.create(profile, 17 + profile.runs * 73); paused = false; accumulator = 0; last = 0;
+    release(); run = M.create(profile, 17 + profile.runs * 73, tuning); paused = false; accumulator = 0; last = 0;
     particles = []; heroPitch = 0; lastCollected = 0; lastHit = 0;
     $('flight-result').hidden = true; $('flight-paused').hidden = true;
     $('flight-power-fill').style.width = '85%'; set('flight-power', '85%'); shop(); hud();
@@ -88,6 +124,7 @@
   }
   function hud() {
     const flying = run.phase === 'flying', active = flying || run.phase === 'sliding';
+    set('flight-telemetry', `고도 ${run.y.toFixed(1)}m · 수평 속도 ${run.vx.toFixed(1)}m/s · 수직 속도 ${run.vy.toFixed(1)}m/s (+: 상승 / −: 하강) · 중력 ${run.tuning.gravity}m/s²`);
     set('flight-distance', number(run.x)); set('flight-region', M.region(run.x).name);
     set('flight-altitude', '고도 ' + number(run.y) + 'm · 속도 ' + number(Math.hypot(run.vx, run.vy)) + 'm/s');
     set('flight-stamina-text', `${Math.ceil(run.stamina)} / ${run.maxStamina}`);
@@ -154,7 +191,7 @@
   });
   for (const event of ['pointercancel', 'lostpointercapture']) canvas.addEventListener(event, () => { drag = null; });
   window.addEventListener('keydown', e => {
-    if (e.target.matches('input,textarea,select') || (e.code === 'Space' && e.target.closest('.character-buttons'))) return;
+    if (e.target.closest('.flight-tuning') || e.target.matches('input,textarea,select') || (e.code === 'Space' && e.target.closest('.character-buttons'))) return;
     if (['Space', 'ArrowUp', 'ArrowDown', 'KeyW', 'KeyS', 'ShiftLeft', 'ShiftRight', 'Escape'].includes(e.code)) e.preventDefault();
     if (e.code === 'Escape' && !e.repeat) { pause(!paused); return; }
     if (paused) return;
@@ -283,7 +320,7 @@
       }
     }
     if (run.x < 250) {
-      const px=sx(0), py=sy(M.START_HEIGHT)+29;
+      const px=sx(0), py=sy(run.tuning.startHeight)+29;
       polygon([[px-100,py+18],[px-50,py-4],[px+18,py],[px+25,py+13],[px+5,py+80],[px-20,ground+90],[px-100,ground+90]],'#5c6050','#a5a88b');
       polygon([[px-50,py-4],[px+18,py],[px+25,py+13],[px-65,py+9]],'#919875');
     }

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#151c1d"><title>회색갈기의 비상 · 붉은사막 2D 비행</title><link rel="stylesheet" href="arcade.css?v=1.2.1"></head>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#151c1d"><title>회색갈기의 비상 · 붉은사막 2D 비행</title><link rel="stylesheet" href="arcade.css?v=1.3.0"></head>
 <body class="flight-body"><main class="flight-app">
   <nav class="flight-nav"><a href="./" class="back-link">← 게임 선택</a><span class="wordmark">✧ 틈의 오락실</span><button id="flight-sound" class="small-button" aria-label="효과음 켜기" aria-pressed="false">♪</button></nav>
   <header class="flight-heading"><div><span class="overline">CRIMSON DESERT · A FLIGHT ACROSS PYWEL</span><h1>회색갈기의 비상</h1><p id="flight-greeting">클리프, 오늘은 어디까지 날아오를 수 있을까.</p></div><div class="flight-record"><span>나의 최고 기록</span><strong><b id="flight-best">0</b> <small>m</small></strong></div></header>
@@ -20,6 +20,15 @@
     <p class="control-help">손을 놓으면 활강 · ↑ / Space 상승 · ↓ 급강하<br><span>급강하로 속도를 모아 상승하세요 · Shift는 섭리의 힘 대시</span></p>
   </section>
   <aside class="camp" aria-label="장비 강화"><header class="camp-heading"><div><span class="overline">GREYMANE CAMP</span><h2>다음 비행을 위한 준비</h2></div><div class="wallet"><span>보유 은화</span><strong>◉ <b id="flight-silver">0</b></strong></div></header><p class="camp-intro">짧은 비행도 헛되지 않도록.<br>모은 은화로 한계를 조금씩 넘어보세요.</p><div id="flight-upgrades"></div><p id="flight-save-status" class="save-status" role="status">기록과 강화는 이 브라우저에 저장됩니다.</p></aside></div>
+  <section class="flight-tuning" aria-labelledby="tuning-title">
+    <h2 id="tuning-title">비행 물리 튜닝</h2>
+    <p>값을 바꾸고 적용하면 현재 비행을 끝내고 출발 지점으로 돌아옵니다. 은화와 강화는 유지됩니다. 설정은 이 브라우저에 저장됩니다.</p>
+    <p>중력은 매 순간 낙하 속도를 증가시킵니다. 점점 빨리 떨어지는 효과를 보려면 자동 활강 보정을 낮추세요. 공기 저항은 가속을 완화합니다.</p>
+    <output id="flight-telemetry" aria-label="현재 비행 수치"></output>
+    <form id="tuning-form"><div id="tuning-fields" class="tuning-fields"></div><div class="tuning-actions"><button type="submit" class="gold-button">적용하고 재시작</button><button type="button" id="tuning-defaults" class="outline-button">튜닝 기본값 복원</button><button type="button" id="tuning-retry" class="outline-button">같은 설정으로 재시작</button></div></form>
+    <p id="tuning-status" role="status">기본 물리값으로 시작합니다.</p>
+    <div class="progress-reset"><h3>처음부터 플레이</h3><p>은화·강화·최고 기록·비행 횟수를 초기화합니다. 선택한 캐릭터와 튜닝 설정은 유지됩니다.</p><button type="button" id="progress-reset" class="outline-button">진행사항 초기화</button></div>
+  </section>
   <footer class="flight-footer"><span>붉은사막에서 영감을 받은 비공식 팬 미니게임</span><span>PYWEL / 5,000m CHALLENGE</span></footer>
-<p class="release-version" data-release>v1.2.1 · 로컬</p>
-</main><script src="flight-model.js?v=1.2.1"></script><script src="flight.js?v=1.2.1"></script></body></html>
+<p class="release-version" data-release>v1.3.0 · 로컬</p>
+</main><script src="flight-model.js?v=1.3.0"></script><script src="flight.js?v=1.3.0"></script></body></html>
