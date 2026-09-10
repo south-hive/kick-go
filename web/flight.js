@@ -15,10 +15,17 @@
     try { localStorage.setItem(STORAGE, JSON.stringify(profile)); return true; }
     catch { set('flight-save-status', '브라우저 저장이 차단되어 이번 기록은 창을 닫으면 사라집니다.'); return false; }
   }
-  $('flight-character').value = profile.character;
-  function characterUI() { set('flight-greeting', `${profile.character === 'damian' ? '데미안' : '클리프'}, 오늘은 어디까지 날아오를 수 있을까.`); }
-  $('flight-character').onchange = () => {
-    profile.character = $('flight-character').value === 'damian' ? 'damian' : 'kliff';
+  function characterUI() {
+    const name = profile.character === 'damian' ? '데미안' : '클리프';
+    set('flight-greeting', `${name}, 오늘은 어디까지 날아오를 수 있을까.`);
+    set('character-help', `${name} 선택됨 · 성능과 강화는 동일`);
+    for (const id of ['kliff', 'damian']) {
+      $('character-' + id).setAttribute('aria-pressed', String(profile.character === id));
+      $('character-' + id).classList.toggle('active', profile.character === id);
+    }
+  }
+  for (const id of ['kliff', 'damian']) $('character-' + id).onclick = () => {
+    profile.character = id;
     release(); characterUI(); save();
   };
   characterUI();
@@ -96,7 +103,7 @@
     $('flight-boost').disabled = !flying || paused || run.stamina < 24 || run.cooldown > 0;
     $('flight-glide').classList.toggle('active', run.gliding && !paused);
     const text = paused ? '잠시 쉬는 중' : run.phase === 'ready' ? '도약을 준비하세요' : run.phase === 'over' ? '다음 모험을 준비하세요' :
-      run.noticeTime > 0 ? run.notice : run.phase === 'sliding' ? '착지 중…' : diving() ? '급강하 · 기수를 내려 속도를 모으는 중' : run.stamina <= 0 ? '스태미너 소진 · 착지에 대비하세요' : run.stalled ? '속도 부족 · 손을 놓고 하강해 가속하세요' : run.gliding ? (run.vy > 0 ? '상승 중 · 속도를 높이로 바꾸는 중' : '기수 들기 · 누르고 있으면 상승으로 전환') : run.vy < 0 ? '하강 가속 · SPACE를 눌러 상승하세요' : '상승 중 · 다음 하강을 기다리세요';
+      run.noticeTime > 0 ? run.notice : run.phase === 'sliding' ? '착지 중…' : diving() ? '급강하 · 기수를 내려 속도를 모으는 중' : run.stamina <= 0 ? '스태미너 소진 · 착지에 대비하세요' : run.stalled ? '속도 부족 · 손을 놓고 하강해 가속하세요' : run.gliding ? (run.vy > 0 ? '상승 중 · 속도를 높이로 바꾸는 중' : '기수 들기 · 누르고 있으면 상승으로 전환') : run.vy < 0 ? '활강 중 · ↑ 상승 / ↓ 급강하' : '상승 중 · 다음 하강을 기다리세요';
     set('flight-state', text);
     $('journey-progress').style.width = Math.min(100, Math.max(run.x, profile.best) / M.GOAL * 100) + '%';
     M.REGIONS.forEach((r, i) => $('region-' + i).classList.toggle('active', r.at <= Math.max(run.x, profile.best)));
@@ -147,7 +154,7 @@
   });
   for (const event of ['pointercancel', 'lostpointercapture']) canvas.addEventListener(event, () => { drag = null; });
   window.addEventListener('keydown', e => {
-    if (e.target.matches('input,textarea,select')) return;
+    if (e.target.matches('input,textarea,select') || (e.code === 'Space' && e.target.closest('.character-buttons'))) return;
     if (['Space', 'ArrowUp', 'ArrowDown', 'KeyW', 'KeyS', 'ShiftLeft', 'ShiftRight', 'Escape'].includes(e.code)) e.preventDefault();
     if (e.code === 'Escape' && !e.repeat) { pause(!paused); return; }
     if (paused) return;
@@ -189,7 +196,7 @@
     ctx.rotate(heroPitch);
     ctx.shadowColor = '#15272280'; ctx.shadowBlur = 7; ctx.shadowOffsetY = 4;
     if (flying) {
-      ctx.save(); ctx.scale(1, run.gliding ? 1 : diving() ? .3 : .55);
+      ctx.save(); ctx.scale(1, diving() ? .3 : run.gliding ? 1 : .85);
       polygon([[-2,-8],[-63,-34+flutter],[-48,-3],[-55,-11],[-30,10],[-37,1],[-14,16],[10,3]], '#15252c', '#728582');
       polygon([[5,-9],[26,-43-flutter],[43,-56],[35,-32],[52,-41],[31,-10],[41,-19],[18,12]], '#25353c', '#839090');
       ctx.restore();

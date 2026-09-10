@@ -93,8 +93,12 @@
         angle += Math.min(Math.max(0, Math.PI * .36 - angle), .95 * authority * dt);
       } else if (input.dive) {
         angle -= Math.min(Math.max(0, angle + Math.PI * .43), .55 * dt);
+      } else {
+        // Unheld wings steer gently toward a descending glide, without adding energy.
+        const target = -.22, authority = clamp((speed - 28) / 65, 0, 1);
+        if (angle < target) angle += Math.min(target - angle, .65 * authority * dt);
       }
-      const drag = (.012 + (run.gliding ? .028 : 0) + (run.stalled ? .055 : 0)) * (1 - run.levels.wing * .07);
+      const drag = ((input.dive || run.gliding ? .012 : .026) + (run.gliding ? .028 : 0) + (run.stalled ? .055 : 0)) * (1 - run.levels.wing * .07);
       const remainingSpeed = speed * Math.exp(-drag * dt);
       run.vx = Math.cos(angle) * remainingSpeed;
       run.vy = Math.sin(angle) * remainingSpeed;

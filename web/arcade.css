@@ -10,3 +10,5 @@
 @media(max-width:540px){.flight-controls{grid-template-columns:repeat(2,minmax(0,1fr))}.character-choice span{flex-basis:100%}}
 
 .release-version{font:11px/1.6 system-ui,sans-serif;text-align:center;color:#a8b7ac;letter-spacing:.3px;margin:16px 0 4px;overflow-wrap:anywhere}
+
+.character-choice{margin:0 0 14px;padding:12px;border:1px solid #8f9f8155;border-radius:8px;background:#203029}.character-buttons{display:flex;gap:8px}.character-buttons button{min-width:90px}.character-buttons button[aria-pressed=true]{background:var(--gold);color:var(--ink);border-color:var(--gold)}

@@ -19,14 +19,14 @@ function cycleControl() {
   return r => {
     if (r.vy < -35) pull = true;
     if (r.vy > 28 || Math.hypot(r.vx, r.vy) < 50) pull = false;
-    return { glide: pull };
+    return { glide: pull, dive: !pull && r.vy < 0 };
   };
 }
 test('timed pull-ups beat holding continuously and finish by landing', () => {
-  const ballistic = fly(), held = fly(M.profile(), () => ({ glide: true }));
+  const neutral = fly(), held = fly(M.profile(), () => ({ glide: true }));
   const cycled = fly(M.profile(), cycleControl());
-  assert.ok(cycled.x > ballistic.x * 1.5);
-  assert.ok(cycled.x > held.x * 2);
+  assert.ok(neutral.x > held.x);
+  assert.ok(cycled.x > held.x * 1.2);
   assert.equal(cycled.reason, 'landed');
   assert.ok(cycled.stamina < cycled.maxStamina);
   assert.ok(cycled.time < 90);
@@ -129,4 +129,20 @@ test('character choice survives saves, accepts old saves, and leaves flight perf
   const kliff = fly({ ...p, character: 'kliff' }, cycleControl());
   const damian = fly(p, cycleControl());
   assert.deepEqual(damian, kliff);
+});
+
+test('neutral input glides gently while up climbs and down dives', () => {
+  const simulate = input => {
+    const r = M.create(M.profile()); M.launch(r);
+    r.y = 300; r.vx = 110; r.vy = -24; r.items = []; r.ruins = [];
+    for (let i = 0; i < 180; i++) M.step(r, 1 / 120, input);
+    return r;
+  };
+  const neutral = simulate({}), up = simulate({ glide: true }), down = simulate({ dive: true });
+  assert.ok(neutral.vy < 0 && neutral.vy > -30);
+  assert.ok(up.vy > 0 && up.y > neutral.y);
+  assert.ok(down.vy < neutral.vy && down.y < neutral.y);
+  assert.equal(neutral.stamina, neutral.maxStamina);
+  assert.equal(down.stamina, down.maxStamina);
+  assert.ok(up.stamina < up.maxStamina);
 });

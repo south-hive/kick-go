@@ -20,6 +20,7 @@ test('mobile launch, stamina, boost, pause, landing and reward loop', async ({ p
   await page.locator('#flight-launch').click();
   await expect(page.locator('#flight-launch')).toBeDisabled();
   await expect.poll(async()=>parseInt((await page.locator('#flight-distance').textContent()).replaceAll(',',''))).toBeGreaterThan(10);
+  await page.locator('#flight-glide').scrollIntoViewIfNeeded();
   const button=await page.locator('#flight-glide').boundingBox();
   await page.mouse.move(button.x+button.width/2,button.y+button.height/2);await page.mouse.down();
   await expect.poll(async()=>+(await page.locator('#flight-stamina-bar').getAttribute('aria-valuenow'))).toBeLessThan(96);
@@ -75,10 +76,11 @@ test('drag launch and corrupt or unavailable storage remain playable', async ({ 
 
 test('character selection persists and touch dive releases on pause', async ({ page }) => {
   await page.goto('/flight.html');
-  await page.locator('#flight-character').selectOption('damian');
+  await page.locator('#character-damian').click();
   await expect(page.locator('#flight-greeting')).toContainText('데미안');
   await page.reload();
-  await expect(page.locator('#flight-character')).toHaveValue('damian');
+  await expect(page.locator('#character-damian')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#character-kliff')).toHaveAttribute('aria-pressed', 'false');
   await expect(page.locator('#flight-boost')).toContainText('섭리의 힘');
   await page.locator('#flight-launch').click();
   await page.keyboard.down('ArrowUp');
