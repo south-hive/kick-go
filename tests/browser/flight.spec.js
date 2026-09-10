@@ -85,6 +85,7 @@ test('character selection persists and touch dive releases on pause', async ({ p
   await expect(page.locator('#flight-glide')).toHaveClass(/active/);
   await page.keyboard.up('ArrowUp');
   const dive = page.locator('#flight-dive');
+  await dive.scrollIntoViewIfNeeded();
   const box = await dive.boundingBox();
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
   await page.mouse.down();
