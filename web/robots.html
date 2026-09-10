@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#101c25"><title>코드 아레나 · 틈의 오락실</title><link rel="stylesheet" href="arcade.css?v=1.4.0"><link rel="stylesheet" href="robots.css?v=1.4.0"></head>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#101c25"><title>코드 아레나 · 틈의 오락실</title><link rel="stylesheet" href="arcade.css?v=1.5.0"><link rel="stylesheet" href="robots.css?v=1.5.0"></head>
 <body class="robot-body"><main class="robot-app">
 <nav class="robot-nav"><a href="./">← 게임 선택</a><span>틈의 오락실 / 03</span><span class="robot-chip">LOCAL · NO AI</span></nav>
 <header class="robot-heading"><div><span class="overline">WRITE. TEST. OUTSMART.</span><h1>코드 아레나<span>작은 규칙, 다른 승부.</span></h1><p>직접 조종하지 않습니다. 당신이 작성한 500자가 로봇을 움직입니다.</p></div><div class="robot-emblem" aria-hidden="true">[ ◉ ]<small>PROGRAM / BATTLE</small></div></header>
@@ -22,5 +22,5 @@
 <section class="robot-manual"><h2>500자로 만드는 행동 규칙</h2><div class="manual-grid"><div><h3>01 / 위에서부터 한 줄</h3><pre>탄환거리 &lt; 90 : 방어, 후진(60)
 적거리 &gt; 230 : 추적, 전진(70), 공격
 항상 : 회전(35), 전진(30), 공격</pre><p>0.1초마다 처음 조건이 맞는 줄을 실행합니다. 쉼표로 연결한 행동은 동시에 실행합니다. 맞는 줄이 없으면 정지합니다. 공백·줄바꿈 제외 500자, 최대 32개 규칙입니다.</p></div><div><h3>02 / 명령어와 센서</h3><p><b>전진(0~100) · 후진(0~100) · 정지</b><br>이동 힘 100은 초속 120입니다.<br><b>회전(-180~180) · 추적</b><br>양수는 시계 방향 °/초. 추적은 몸체를 가까운 적 쪽으로 돌립니다.<br><b>공격 · 방어</b><br>포탑은 가까운 적을 자동 조준합니다.</p><p>체력·에너지(0~100), 적거리·벽거리·탄환거리(경기장 단위), 적각도(-180~180°), 시간(초)을 비교합니다. 비교 기호: &lt; &gt; &lt;= &gt;= == !=. 탄환이 없으면 탄환거리는 9999입니다.</p></div><div><h3>03 / 공정한 전투</h3><p>모두 체력 100·에너지 100. 공격은 에너지 8, 재장전 0.55초, 피해 12입니다. 방어는 초당 에너지 24를 쓰고 피해를 3으로 줄입니다. 방어하지 않으면 초당 12 회복합니다. 공격과 방어는 동시에 쓸 수 없습니다.</p><p>45초부터 안전 구역이 줄어듭니다. 구역 밖에서는 방어와 무관하게 초당 체력 20이 줄어듭니다. 마지막 생존자가 승리하며, 90초에는 남은 체력 → 준 피해 순으로 판정합니다. 같으면 무승부입니다.</p></div><div><h3>04 / 다른 PC로 가져가기</h3><p>연습장의 스크립트 입력창 내용을 직접 선택해 메신저로 보내세요. 대전용 PC에서 한 기기 대전을 열고 각 참가자 슬롯에 그대로 붙여넣으면 됩니다.</p><p>저장은 기기별이며 계정이나 서버 없이 동작합니다. AI·자유 문장·JavaScript는 사용하지 않습니다. 화면에 안내된 명령어만 실행합니다.</p></div></div></section>
-<p class="release-version" data-release>v1.4.0 · 로컬</p>
-</main><script src="robot-model.js?v=1.4.0"></script><script src="robots.js?v=1.4.0"></script></body></html>
+<p class="release-version" data-release>v1.5.0 · 로컬</p>
+</main><script src="robot-model.js?v=1.5.0"></script><script src="robots.js?v=1.5.0"></script></body></html>

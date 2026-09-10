@@ -5,7 +5,8 @@ const path = require('node:path');
 const { randomBytes } = require('node:crypto');
 const { WebSocketServer } = require('ws');
 const { Room, VERSION } = require('./multiplayer');
-const files = Object.fromEntries(['index.html', 'robots.html', 'robots.css', 'robot-model.js', 'robots.js', 'alkkagi.html', 'flight.html', 'style.css', 'arcade.css', 'game.js', 'physics.js', 'online.js', 'config.js', 'hub.js', 'flight-model.js', 'flight.js', 'assets/pywel-panorama.png', 'assets/damiane-sprites-v2.png'].map(f => ['/' + f, f]));
+const { attachNaval } = require('./naval-server');
+const files = Object.fromEntries(['index.html', 'battleship.html', 'naval.css', 'naval-model.js', 'naval-client.js', 'naval.js', 'robots.html', 'robots.css', 'robot-model.js', 'robots.js', 'alkkagi.html', 'flight.html', 'style.css', 'arcade.css', 'game.js', 'physics.js', 'online.js', 'config.js', 'hub.js', 'flight-model.js', 'flight.js', 'assets/pywel-panorama.png', 'assets/damiane-sprites-v2.png'].map(f => ['/' + f, f]));
 files['/'] = 'index.html';
 const types = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.png': 'image/png' };
 
@@ -22,8 +23,10 @@ function createGameServer({ automatic = true } = {}) {
       res.writeHead(200, { 'Content-Type': types[path.extname(file)] + '; charset=utf-8', 'Cache-Control': 'no-cache', 'X-Content-Type-Options': 'nosniff' }); res.end(data);
     });
   });
+  const naval = attachNaval(server);
   const wss = new WebSocketServer({ noServer: true, maxPayload: 4096, perMessageDeflate: false });
   server.on('upgrade', (req, socket, head) => {
+    if (req.url === '/ws/naval') return;
     const origins = (process.env.ALLOWED_ORIGINS || 'https://south-hive.github.io').split(',');
     let ownOrigin = false;
     try { const origin = new URL(req.headers.origin); ownOrigin = origin.host === req.headers.host; } catch {}
@@ -103,11 +106,12 @@ function createGameServer({ automatic = true } = {}) {
   }, 15000);
   async function close() {
     clearInterval(simulation); clearInterval(maintenance);
+    await naval.close();
     wss.clients.forEach(ws => ws.terminate());
     await new Promise(resolve => wss.close(resolve));
     await new Promise(resolve => server.close(resolve));
   }
-  return { server, rooms, close, broadcast };
+  return { server, rooms, naval, close, broadcast };
 }
 if (require.main === module) {
   const game = createGameServer(), port = Number(process.env.PORT) || 8080;
