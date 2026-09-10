@@ -8,3 +8,5 @@
 
 .character-choice{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-top:16px;font-size:11px;color:var(--muted)}.character-choice select{min-height:44px;padding:8px 30px 8px 12px;border:1px solid #8f9f8155;border-radius:6px;background:#26362f;color:#eee8d9;font:inherit}.character-choice span{font-size:10px}.character-choice label{color:var(--gold)}
 @media(max-width:540px){.flight-controls{grid-template-columns:repeat(2,minmax(0,1fr))}.character-choice span{flex-basis:100%}}
+
+.release-version{font:11px/1.6 system-ui,sans-serif;text-align:center;color:#a8b7ac;letter-spacing:.3px;margin:16px 0 4px;overflow-wrap:anywhere}

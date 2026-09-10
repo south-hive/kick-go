@@ -23,3 +23,5 @@ header{padding:0 8px}h1{font-size:21px;margin-top:3px}.eyebrow{font-size:8px}
 @media(orientation:landscape) and (min-width:760px){.online-panel{grid-column:1 / -1;margin-top:0}.online-panel #online-lobby,.online-panel #online-room{max-width:560px}.online-panel #online-message{margin:8px 0}}
 
 .game-back{max-width:1120px;margin:10px auto 0;padding:0 16px;font-size:11px}.game-back a{color:#cbb78f;text-decoration:none}.game-back a:focus-visible{outline:2px solid #e4c18a;outline-offset:4px}
+
+.release-version{font:11px/1.6 system-ui,sans-serif;text-align:center;color:#a8b7ac;letter-spacing:.3px;margin:16px 0 4px;overflow-wrap:anywhere}
