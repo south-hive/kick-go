@@ -12,6 +12,9 @@
   let run, paused = false, last = 0, accumulator = 0, charge = null, drag = null, sound = false, audio;
   let width = 1, height = 1, lastCollected = 0, lastHit = 0, particles = [], heroPitch = 0;
   const keys = new Set(), fingers = new Set(), diveFingers = new Set();
+  const damianeArt = new Image();
+  damianeArt.onload = () => { canvas.dataset.damianeArt = 'ready'; characterUI(); };
+  damianeArt.src = 'assets/damiane-sprites-v2.png';
   const picture = new Image(); picture.src = 'assets/pywel-panorama.png';
   const set = (id, text) => { if ($(id).textContent !== String(text)) $(id).textContent = text; };
   const number = x => Math.floor(x).toLocaleString('ko-KR');
@@ -55,6 +58,9 @@
     const name = profile.character === 'damian' ? '데미안' : '클리프';
     set('flight-greeting', `${name}, 오늘은 어디까지 날아오를 수 있을까.`);
     set('character-help', `${name} 선택됨 · 성능과 강화는 동일`);
+    const portrait = $('character-portrait');
+    portrait.hidden = profile.character !== 'damian' || !damianeArt.naturalWidth;
+    if (!portrait.hidden) { const brush = portrait.getContext('2d'); brush.clearRect(0,0,144,144); brush.drawImage(damianeArt,270,0,290,320,0,0,144,144); }
     for (const id of ['kliff', 'damian']) {
       $('character-' + id).setAttribute('aria-pressed', String(profile.character === id));
       $('character-' + id).classList.toggle('active', profile.character === id);
@@ -274,7 +280,12 @@
       polygon([[5,-9],[26,-43-flutter],[43,-56],[35,-32],[52,-41],[31,-10],[41,-19],[18,12]], '#25353c', '#839090');
       ctx.restore();
     }
-    if (damian) drawDamiane(flying, flutter);
+    if (damian && damianeArt.complete && damianeArt.naturalWidth) {
+      ctx.shadowColor = 'transparent';
+      ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+      if (flying) ctx.drawImage(damianeArt,620,40,1000,850,-75,-72,120,102);
+      else ctx.drawImage(damianeArt,100,0,520,971,-24,-76,55,103);
+    } else if (damian) drawDamiane(flying, flutter);
     else {
     polygon([[-7,-14],[-20,5],[-40,14+flutter],[-22,20],[-10,10],[6,-1]], '#823c32', '#a5664c');
     ctx.shadowColor = 'transparent'; ctx.lineCap = 'round';

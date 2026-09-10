@@ -78,6 +78,8 @@ test('character selection persists and touch dive releases on pause', async ({ p
   await page.goto('/flight.html');
   await page.locator('#character-damian').click();
   await expect(page.locator('#flight-greeting')).toContainText('데미안');
+  await expect(page.locator('#flight-canvas')).toHaveAttribute('data-damiane-art', 'ready');
+  await expect(page.locator('#character-portrait')).toBeVisible();
   await page.locator('.flight-stage').screenshot({ path: 'test-results/damiane-ready.png' });
   await page.reload();
   await expect(page.locator('#character-damian')).toHaveAttribute('aria-pressed', 'true');
@@ -86,6 +88,7 @@ test('character selection persists and touch dive releases on pause', async ({ p
   await page.locator('#flight-launch').click();
   await page.keyboard.down('ArrowUp');
   await expect(page.locator('#flight-glide')).toHaveClass(/active/);
+  await page.locator('.flight-stage').screenshot({path:'test-results/damiane-flying.png'});
   await page.keyboard.up('ArrowUp');
   const dive = page.locator('#flight-dive');
   await dive.scrollIntoViewIfNeeded();
