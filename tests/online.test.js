@@ -5,8 +5,8 @@ const WebSocket = require('ws');
 const { createGameServer } = require('../server');
 const publicState = state => ({ ...state, stones: state.stones.map(({ iron, ...s }) => s) });
 
-async function harness(t, select = true) {
-  const game = createGameServer({ automatic: false });
+async function harness(t, select = true, firstPlayer = 0) {
+  const game = createGameServer({ automatic: false, firstPlayer });
   game.server.listen(0, '127.0.0.1'); await once(game.server, 'listening');
   t.after(() => game.close());
   async function connect() {
@@ -82,7 +82,8 @@ test('both players must consent to rematch and leaving ends the room', async t =
   host.send({ type: 'rematch', match: 1 }); await host.next(m => m.type === 'state' && m.votes[0]);
   assert.equal(room.match, 1);
   guest.send({ type: 'rematch', match: 1 }); await guest.next(m => m.type === 'state' && m.match === 2);
-  assert.equal(room.stones.filter(s => s.alive).length, 10); assert.equal(room.turn, 0);
+  assert.equal(room.stones.filter(s => s.alive).length, 10); assert.equal(room.turn, 1);
+  assert.deepEqual(room.guideRemaining,[2,1]);assert.deepEqual(room.guideArmed,[false,false]);
   assert.equal(room.phase,'select');assert.deepEqual(room.ironReady,[false,false]);assert.ok(room.stones.every(s=>!s.iron));
   host.send({ ...shot(), match: 1 }); assert.equal((await host.next(m => m.type === 'error')).code, 'NOT_YOUR_TURN');
   guest.send({ type: 'leave' }); await host.next(m => m.type === 'ended'); assert.equal(game.rooms.size, 0);
@@ -115,4 +116,33 @@ test('secret iron selection is required, immutable, private on sync and preserve
   replacement.send(shot(2));await replacement.next(m=>m.type==='accepted');
   const consumed=await guest.next(m=>m.type==='state'&&m.phase==='moving');
   assert.equal(room.stones[2].iron,false);assert.equal('iron' in consumed.stones[2],false);
+});
+
+test('white can open and rematches alternate the opener instead of the final turn',async t=>{
+  const {guest,host,room,shot}=await harness(t,true,1);
+  assert.equal(room.firstPlayer,1);assert.equal(room.turn,1);assert.deepEqual(room.guideRemaining,[2,1]);
+  guest.send(shot(5));await guest.next(m=>m.type==='accepted');
+  room.phase='over';room.turn=0;
+  guest.send({type:'rematch',match:1});const request=await host.next(m=>m.type==='state'&&m.votes[1]);
+  assert.equal(request.phase,'over');assert.equal(request.votes[0],false);
+  host.send({type:'rematch',match:1});await host.next(m=>m.type==='state'&&m.match===2);
+  assert.equal(room.firstPlayer,0);assert.equal(room.turn,0);assert.deepEqual(room.guideRemaining,[1,2]);
+});
+
+test('guide credit is reserved once, survives reconnect, and is spent only by an accepted shot',async t=>{
+  const {host,guest,room,shot,connect,h,game}=await harness(t);
+  const guide=()=>({type:'guide',match:room.match,revision:room.revision});
+  guest.send(guide());assert.equal((await guest.next(m=>m.type==='error')).code,'NOT_YOUR_TURN');
+  host.send(guide());await host.next(m=>m.type==='state'&&m.guideArmed[0]);
+  host.send(guide());await host.next(m=>m.type==='state'&&m.guideArmed[0]);
+  assert.equal(room.guideRemaining[0],1);
+  host.send({...shot(),vx:9999});await host.next(m=>m.type==='error');assert.equal(room.guideRemaining[0],1);
+  const resumed=await connect();resumed.send({type:'resume',code:room.code,token:h.token});
+  const restored=await resumed.next(m=>m.type==='state');assert.equal(restored.guideArmed[0],true);assert.equal(restored.guideRemaining[0],1);
+  resumed.send(shot());await resumed.next(m=>m.type==='accepted');assert.equal(room.guideRemaining[0],0);
+  for(let i=0;i<2000&&room.phase==='moving';i++)room.step(1/120);
+  guest.send(shot(5));await guest.next(m=>m.type==='accepted');
+  for(let i=0;i<2000&&room.phase==='moving';i++)room.step(1/120);
+  game.broadcast(room);resumed.send(guide());assert.equal((await resumed.next(m=>m.type==='error')).code,'NO_GUIDES');
+  assert.equal(room.guideRemaining[1],2);
 });

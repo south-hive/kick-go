@@ -27,8 +27,9 @@
           <button id="iron-confirm" class="primary" disabled>선택 확정</button>
         </div>
       </div>
-      <div id="result" class="result" hidden><span>MATCH COMPLETE</span><h2 id="winner"></h2><p id="result-detail"></p><button id="again" class="primary">한 판 더 하기 ↗</button></div>
+      <div id="result" class="result" hidden><span>MATCH COMPLETE</span><h2 id="winner"></h2><p id="result-detail"></p><p id="rematch-message" role="status" aria-live="polite"></p><button id="again" class="primary">한 판 더 하기 ↗</button></div>
     </section>
+    <div class="aim-actions"><button id="cancel-aim" disabled title="Esc 또는 두 번째 손가락으로 판을 터치해도 취소됩니다">× 조준 취소</button></div>
     <section class="power"><span>튕기는 힘</span><div class="track"><div id="power-fill"></div></div><strong id="power-number">0%</strong></section>
     <div id="iron-state" class="iron-state" role="status"></div>
     <section class="spin-panel" aria-label="타격점 설정">

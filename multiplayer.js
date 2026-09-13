@@ -1,5 +1,5 @@
 'use strict';
-const { randomBytes, timingSafeEqual } = require('node:crypto');
+const { randomBytes, randomInt, timingSafeEqual } = require('node:crypto');
 const P = require('./web/physics');
 const VERSION = 1;
 const token = () => randomBytes(24).toString('hex');
@@ -7,9 +7,10 @@ const counts = stones => [0, 1].map(team => stones.filter(s => s.alive && s.team
 const equalToken = (a, b) => typeof a === 'string' && Buffer.byteLength(a) === Buffer.byteLength(b) && timingSafeEqual(Buffer.from(a), Buffer.from(b));
 
 class Room {
-  constructor(code, now = Date.now()) {
+  constructor(code, now = Date.now(), firstPlayer = randomInt(2)) {
     this.code = code; this.players = [null, null]; this.stones = P.setup();
-    this.turn = 0; this.phase = 'waiting'; this.revision = 0; this.match = 1;
+    this.firstPlayer = firstPlayer; this.turn = firstPlayer; this.phase = 'waiting'; this.revision = 0; this.match = 1;
+    this.guideRemaining = [0,1].map(team=>team===firstPlayer?1:2); this.guideArmed = [false,false];
     this.votes = [false, false]; this.lastActivity = now; this.shotTime = 0;
     this.ironReady = [false, false];
   }
@@ -42,8 +43,15 @@ class Room {
     const s = this.stones.find(s => s.id === message.stone && s.alive && s.team === team);
     const { vx, vy, side, follow } = message;
     if (!s || ![vx, vy, side, follow].every(Number.isFinite) || Math.hypot(vx, vy) < 1 || Math.hypot(vx, vy) > 1360.001 || Math.hypot(side, follow) > 1.001) throw Error('INVALID_SHOT');
+    if (this.guideArmed[team]) { this.guideRemaining[team]--; this.guideArmed[team] = false; }
     P.shoot(s, vx, vy, side, follow);
     this.phase = 'moving'; this.revision++; this.shotTime = 0; this.lastActivity = Date.now();
+  }
+  armGuide(team, message) {
+    if (!this.ready()) throw Error('OPPONENT_OFFLINE');
+    if (this.phase !== 'aim' || this.turn !== team || message.match !== this.match || message.revision !== this.revision) throw Error('NOT_YOUR_TURN');
+    if (this.guideRemaining[team] <= 0) throw Error('NO_GUIDES');
+    this.guideArmed[team] = true; this.lastActivity = Date.now();
   }
   step(dt) {
     if (this.phase !== 'moving') return;
@@ -59,7 +67,9 @@ class Room {
     if (this.phase !== 'over' || !this.ready() || message.match !== this.match) throw Error('REMATCH_UNAVAILABLE');
     this.votes[team] = true;
     if (this.votes.every(Boolean)) {
-      this.stones = P.setup(); this.turn = 0; this.phase = 'select'; this.ironReady = [false, false];
+      this.firstPlayer = 1 - this.firstPlayer;
+      this.stones = P.setup(); this.turn = this.firstPlayer; this.phase = 'select'; this.ironReady = [false, false];
+      this.guideRemaining = [0,1].map(team=>team===this.firstPlayer?1:2); this.guideArmed = [false,false];
       this.match++; this.revision++; this.votes = [false, false];
     }
     this.lastActivity = Date.now();
@@ -70,6 +80,7 @@ class Room {
       return s.team === viewer ? { ...publicStone, iron: !!iron } : publicStone;
     });
     return { type: 'state', version: VERSION, code: this.code, stones, ironReady: [...this.ironReady],
+      firstPlayer: this.firstPlayer, guideRemaining: [...this.guideRemaining], guideArmed: [...this.guideArmed],
       turn: this.turn, phase: this.phase, revision: this.revision, match: this.match,
       connected: this.players.map(p => !!(p && p.socket && p.socket.readyState === 1)), votes: this.votes };
   }

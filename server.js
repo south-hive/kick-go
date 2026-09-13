@@ -11,7 +11,7 @@ files['/'] = 'index.html';
 files['/ai.js'] = 'ai.js';
 const types = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.png': 'image/png' };
 
-function createGameServer({ automatic = true } = {}) {
+function createGameServer({ automatic = true, firstPlayer } = {}) {
   const rooms = new Map();
   const server = http.createServer((req, res) => {
     let pathname;
@@ -57,7 +57,7 @@ function createGameServer({ automatic = true } = {}) {
           if (m.type === 'create') {
             if (rooms.size >= 100) throw Error('SERVER_FULL');
             let code; do { code = randomBytes(6).toString('hex').toUpperCase(); } while (rooms.has(code));
-            room = new Room(code); rooms.set(code, room); team = 0; player = room.seat(team, ws);
+            room = new Room(code, Date.now(), firstPlayer); rooms.set(code, room); team = 0; player = room.seat(team, ws);
           } else {
             room = rooms.get(typeof m.code === 'string' ? m.code.toUpperCase() : '');
             if (!room) throw Error('ROOM_NOT_FOUND');
@@ -76,6 +76,7 @@ function createGameServer({ automatic = true } = {}) {
           if (!room || room.players[ws.team]?.socket !== ws) throw Error('NOT_JOINED');
           if (m.type === 'shot') { room.shot(ws.team, m); send(ws, { type: 'accepted', request: m.request }); broadcast(room); }
           else if (m.type === 'selectIron') { room.selectIron(ws.team, m); broadcast(room); }
+          else if (m.type === 'guide') { room.armGuide(ws.team, m); broadcast(room); }
           else if (m.type === 'rematch') { room.rematch(ws.team, m); broadcast(room); }
           else if (m.type === 'leave') closeRoom(room, 'LEFT');
           else if (m.type === 'sync') send(ws, room.snapshot(ws.team));

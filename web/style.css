@@ -30,6 +30,14 @@ header{padding:0 8px}h1{font-size:21px;margin-top:3px}.eyebrow{font-size:8px}
 .guide-toggle[aria-pressed=true]{background:#184944;border-color:#77e4d0;color:#c4fff3}
 .guide-toggle[aria-pressed=true]::before{background:#77e4d0}
 .guide-toggle:disabled{opacity:.4;cursor:default}
+.scoreboard .player,.scoreboard .player>div{min-width:0}
+.guide-toggle{white-space:normal;max-width:100%;min-height:38px}
+.aim-actions{display:flex;justify-content:center;margin-top:8px;min-height:40px}
+#cancel-aim{min-height:40px;padding:6px 16px;border:1px solid #81958a;border-radius:5px;background:#203c32;color:#eef8f2;font-size:12px;touch-action:manipulation}
+#cancel-aim:disabled{opacity:.35;cursor:default}
+#rematch-message{color:#7dffdc;font-weight:600;min-height:20px;margin:0 12px 16px;text-align:center}
+.result{z-index:3}
+@media(orientation:landscape) and (min-width:760px){.aim-actions{grid-column:2;margin:0}}
 .iron-panel{position:absolute;inset:0;z-index:2;background:#14251f;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:16px;text-align:center}
 .iron-panel[hidden],.iron-panel [hidden]{display:none}
 .iron-panel h2{font-size:20px;letter-spacing:0;margin:0}

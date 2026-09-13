@@ -47,10 +47,18 @@ class OnlineGame {
         this.change('');
       } else if (m.type === 'state') {
         if (m.version !== 1 || !this.session || m.code !== this.session.code) return;
+        if (!Array.isArray(m.ironReady) || m.ironReady.length !== 2 || !m.ironReady.every(v => typeof v === 'boolean') ||
+          ![0,1].includes(m.firstPlayer) || !Array.isArray(m.guideRemaining) || m.guideRemaining.length !== 2 || !m.guideRemaining.every(v=>Number.isInteger(v)&&v>=0&&v<=2) ||
+          !Array.isArray(m.guideArmed) || m.guideArmed.length !== 2 || !m.guideArmed.every(v=>typeof v==='boolean')) {
+          this.stop(false); this.state = null; this.pending = false;
+          this.change('온라인 서버가 구버전입니다. 금강불괴·선공·겁쟁이 횟수 규칙을 업데이트한 뒤 새 방을 만들어 주세요.');
+          return;
+        }
         this.state = m; this.pending = false; this.onState(m); this.change('');
       } else if (m.type === 'error') {
         this.pending = false;
         const errors = { ROOM_NOT_FOUND: '방이 없거나 만료됐습니다. 새 초대 링크를 받아 주세요.', ROOM_FULL: '이미 두 명이 입장한 방입니다.', INVALID_SESSION: '이전 경기를 복구할 수 없습니다. 새 방을 만들어 주세요.', NOT_YOUR_TURN: '차례가 바뀌었습니다. 현재 판을 확인해 주세요.', OPPONENT_OFFLINE: '상대가 돌아오면 계속할 수 있습니다.', INVALID_SHOT: '발사 정보를 확인할 수 없습니다. 다시 조준해 주세요.', VERSION_MISMATCH: '게임이 업데이트됐습니다. 새로고침해 주세요.', SERVER_FULL: '대전 방이 가득 찼습니다. 잠시 후 다시 시도해 주세요.', REMATCH_UNAVAILABLE: '경기가 끝나고 두 사람이 연결되면 재대결할 수 있습니다.' };
+        errors.NO_GUIDES = '이번 경기의 겁쟁이 모드 사용 횟수를 모두 썼습니다.';
         if (!this.connected || ['ROOM_NOT_FOUND', 'INVALID_SESSION', 'VERSION_MISMATCH'].includes(m.code)) { this.stop(false); this.storage(null); this.session = null; }
         this.change(errors[m.code] || '요청을 처리하지 못했습니다. 다시 시도해 주세요.');
       } else if (m.type === 'ended') {
@@ -68,6 +76,12 @@ class OnlineGame {
     };
   }
   canShoot() { return this.connected && !this.pending && this.state?.phase === 'aim' && this.state.turn === this.session?.team && this.state.connected.every(Boolean); }
+  armGuide() {
+    if (!this.canShoot() || this.state.guideRemaining[this.session.team] <= 0) return;
+    this.pending = true;
+    if (!this.send({type:'guide',match:this.state.match,revision:this.state.revision})) this.pending = false;
+    this.change('');
+  }
   selectIron(stone) {
     if (!this.connected || this.pending || this.state?.phase !== 'select' || this.state.ironReady[this.session.team] || !this.state.connected.every(Boolean)) return;
     this.pending = true;
@@ -95,7 +109,7 @@ class OnlineGame {
     if (!this.state.connected.every(Boolean)) return '상대 연결이 끊겼습니다 · 재접속 대기 중';
     if (this.state.phase === 'select') return this.state.ironReady[this.session.team] ? '선택 완료 · 상대 선택 대기 중' : '금강불괴 돌을 선택하세요';
     if (this.state.phase === 'moving' || this.pending) return '돌이 멈출 때까지 기다려 주세요';
-    if (this.state.phase === 'over') return this.state.votes[this.session.team] ? '상대의 재대결 동의를 기다리고 있어요' : '경기 종료 · 둘 다 재대결을 누르면 새 판 시작';
+    if (this.state.phase === 'over') return this.state.votes[this.session.team] ? '상대의 재대결 동의를 기다리고 있어요' : this.state.votes[1-this.session.team] ? '상대가 재대결을 요청했습니다 · 수락하면 새 판 시작' : '경기 종료 · 둘 다 재대결을 누르면 새 판 시작';
     return this.state.turn === this.session.team ? '내 차례 · 돌을 당겨 조준하세요' : '상대 차례 · 다음 수를 기다려 주세요';
   }
 }

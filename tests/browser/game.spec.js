@@ -1,4 +1,5 @@
 const { test, expect } = require('@playwright/test');
+test.beforeEach(async({page})=>{await page.addInitScript(()=>{Math.random=()=>.1;});});
 
 async function online(page) {
   await page.goto('/'); await page.locator('#choose-alkkagi').click(); await page.locator('#online-mode').click(); await page.locator('#accept').click();
@@ -6,7 +7,7 @@ async function online(page) {
 async function shoot(page, id) {
   await page.locator('#game').scrollIntoViewIfNeeded();
   const box = await page.locator('#game').boundingBox();
-  const stone = await page.evaluate(id => stones.find(s => s.id === id), id);
+  const stone = await page.evaluate(id => viewPoint(stones.find(s => s.id === id)), id);
   const x = box.x + stone.x / 1200 * box.width, y = box.y + stone.y / 1200 * box.height;
   await page.mouse.move(x, y); await page.mouse.down(); await page.mouse.move(x + 12, y, { steps: 3 }); await page.mouse.up();
 }
@@ -25,20 +26,30 @@ test('two browser contexts trade shots, share positions, and resume after reload
     await expect(guest.locator('#online-role')).toHaveText('나: 백돌');
     await host.locator('#iron-options button').nth(4).click();await host.locator('#iron-confirm').click();
     await guest.locator('#iron-options button').nth(4).click();await guest.locator('#iron-confirm').click();
-    await expect(host.locator('#status')).toContainText('내 차례');
+    await expect.poll(()=>host.evaluate(()=>phase)).toBe('aim');
+    const firstTeam=await host.evaluate(()=>net.state.firstPlayer);
+    const first=firstTeam===0?host:guest,second=firstTeam===0?guest:host;
+    await expect(first.locator('#status')).toContainText('내 차례');
     expect(await host.evaluate(()=>stones.filter(s=>s.team===1).some(s=>'iron' in s))).toBe(false);
     expect(await guest.evaluate(()=>stones.filter(s=>s.team===0).some(s=>'iron' in s))).toBe(false);
-    await expect(guest.locator('#strike-pad')).toBeDisabled();
-    await shoot(host, 0);
-    await expect(guest.locator('#status')).toContainText('내 차례');
-    await expect(host.locator('#strike-pad')).toBeDisabled();
+    expect(await guest.evaluate(()=>viewPoint(stones.find(s=>s.id===5)).y)).toBeGreaterThan(600);
+    expect(await host.evaluate(()=>flippedView())).toBe(false);
+    await guest.locator('#game').screenshot({path:'test-results/white-online-view.png'});
+    await expect(second.locator('#strike-pad')).toBeDisabled();
+    await first.locator('#guide-'+firstTeam).click();
+    await expect.poll(()=>first.evaluate(()=>net.state.guideArmed[net.session.team])).toBe(true);
+    await shoot(first, firstTeam*5);
+    await expect(second.locator('#status')).toContainText('내 차례');
+    await expect(first.locator('#strike-pad')).toBeDisabled();
+    expect(await first.evaluate(()=>net.state.guideRemaining[net.session.team])).toBe(0);
     const board = await host.evaluate(() => stones.map(({ x, y, alive }) => ({ x, y, alive })));
     await expect.poll(() => guest.evaluate(() => stones.map(({ x, y, alive }) => ({ x, y, alive })))).toEqual(board);
     await guest.reload();
     await expect(guest.locator('#online-role')).toHaveText('나: 백돌');
-    await expect(guest.locator('#status')).toContainText('내 차례');
+    await expect(second.locator('#status')).toContainText('내 차례');
     await expect.poll(() => guest.evaluate(() => stones.map(({ x, y, alive }) => ({ x, y, alive })))).toEqual(board);
-    await shoot(guest, 5); await expect(host.locator('#status')).toContainText('내 차례');
+    await shoot(second, (1-firstTeam)*5); await expect(first.locator('#status')).toContainText('내 차례');
+    await expect(first.locator('#guide-'+firstTeam)).toBeDisabled();
     await host.locator('#online-panel').scrollIntoViewIfNeeded();
     await host.screenshot({ path: 'test-results/online-mobile.png', fullPage: true });
     await guest.locator('#room-leave').click(); await guest.locator('#accept').click();
@@ -110,4 +121,45 @@ test('offline play, strike selection and edge-limited pull still work', async ({
   });
   expect(edgePower).toBe(1);
   await shoot(page, 0); await expect.poll(() => page.evaluate(() => turn), { timeout: 2000 }).toBe(1);
+});
+
+test('aim cancels with Escape, release on cancel button and a second touch without spending a guide',async({page})=>{
+  await page.goto('/alkkagi.html');await page.locator('#iron-options button').first().click();await page.locator('#iron-confirm').click();
+  await page.locator('#guide-0').click();await page.locator('#game').scrollIntoViewIfNeeded();
+  const before=await page.evaluate(()=>JSON.stringify(stones));
+  const box=await page.locator('#game').boundingBox();
+  const x=box.x+256/1200*box.width,y=box.y+984/1200*box.height;
+  async function aim(){await page.mouse.move(x,y);await page.mouse.down();await page.mouse.move(x+25,y);await expect(page.locator('#cancel-aim')).toBeEnabled();}
+  await aim();await page.keyboard.press('Escape');await page.mouse.up();
+  expect(await page.evaluate(()=>drag)).toBe(null);expect(await page.evaluate(()=>JSON.stringify(stones))).toBe(before);
+  await aim();
+  const cancel=await page.locator('#cancel-aim').boundingBox();await page.mouse.move(cancel.x+cancel.width/2,cancel.y+cancel.height/2);await page.mouse.up();
+  expect(await page.evaluate(()=>drag)).toBe(null);expect(await page.evaluate(()=>JSON.stringify(stones))).toBe(before);
+  const cdp=await page.context().newCDPSession(page);
+  await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x,y,id:1}]});
+  await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:x+20,y,id:1}]});
+  await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:x+20,y,id:1},{x:x+60,y:y-50,id:2}]});
+  await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await cdp.detach();
+  expect(await page.evaluate(()=>drag)).toBe(null);expect(await page.evaluate(()=>JSON.stringify(stones))).toBe(before);
+  expect(await page.evaluate(()=>guideRemaining[0])).toBe(1);await expect(page.locator('#power-number')).toHaveText('0%');
+  await aim();await page.mouse.up();await expect.poll(()=>page.evaluate(()=>guideRemaining[0])).toBe(0);
+});
+
+test('rematch request is visible on the result overlay and acceptance sends the current match',async({page})=>{
+  await page.goto('/alkkagi.html');
+  await page.evaluate(()=>{
+    setMode('online');net.connected=true;net.session={team:0,code:'ABCDEF123456'};
+    net.state={phase:'over',turn:0,match:3,revision:10,firstPlayer:1,guideRemaining:[0,0],guideArmed:[false,false],ironReady:[true,true],votes:[false,true],connected:[true,true],stones:P.setup()};
+    applyOnlineState(net.state);renderOnline();window.sent=[];net.send=m=>{window.sent.push(m);return true;};
+  });
+  await expect(page.locator('#result')).toBeVisible();await expect(page.locator('#rematch-message')).toContainText('상대가 재대결');
+  await expect(page.locator('#again')).toHaveText('재대결 수락');await page.locator('#again').click();
+  expect(await page.evaluate(()=>window.sent)).toEqual([{type:'rematch',match:3}]);
+  expect(await page.evaluate(()=>{net.session.team=null;return flippedView();})).toBe(false);
+});
+
+test('a new local game can open with white and rematch swaps opener and guide allowance',async({page})=>{
+  await page.goto('/alkkagi.html');
+  const result=await page.evaluate(()=>{Math.random=()=>.9;reset();const first=[firstPlayer,...guideRemaining];reset(true);return{first,second:[firstPlayer,...guideRemaining]};});
+  expect(result).toEqual({first:[1,2,1],second:[0,1,2]});
 });
