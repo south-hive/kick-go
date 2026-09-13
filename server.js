@@ -8,6 +8,7 @@ const { Room, VERSION } = require('./multiplayer');
 const { attachNaval } = require('./naval-server');
 const files = Object.fromEntries(['index.html', 'battleship.html', 'naval.css', 'naval-model.js', 'naval-client.js', 'naval.js', 'robots.html', 'robots.css', 'robot-model.js', 'robots.js', 'alkkagi.html', 'flight.html', 'style.css', 'arcade.css', 'game.js', 'physics.js', 'online.js', 'config.js', 'hub.js', 'flight-model.js', 'flight.js', 'assets/pywel-panorama.png', 'assets/damiane-sprites-v2.png'].map(f => ['/' + f, f]));
 files['/'] = 'index.html';
+files['/ai.js'] = 'ai.js';
 const types = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.png': 'image/png' };
 
 function createGameServer({ automatic = true } = {}) {

@@ -82,6 +82,21 @@ test('local players select privately with a handoff before the first turn',async
   expect(await page.evaluate(()=>stones.filter(s=>s.iron).map(s=>s.id))).toEqual([2,8]);
 });
 
+test('separate AI module observes public shots, plays a turn and resets its memory',async({page})=>{
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.goto('/alkkagi.html');
+  await page.locator('#iron-options button').first().click();await page.locator('#iron-confirm').click();
+  const result=await page.evaluate(()=>{
+    launch(stones[0],100,0);
+    const excluded=aiBelief.probability(0),spent=aiBelief.spent;
+    stones=P.setup();turn=1;phase='aim';chooseAI();
+    const fired=phase==='moving'&&stones.some(s=>s.team===1&&Math.hypot(s.vx,s.vy)>0);
+    reset();return{excluded,spent,fired,reset:aiBelief.probability(0)};
+  });
+  expect(result.excluded).toBe(0);expect(result.spent).toBeGreaterThan(0);
+  expect(result.fired).toBe(true);expect(result.reset).toBe(.2);expect(errors).toEqual([]);
+});
+
 test('offline play, strike selection and edge-limited pull still work', async ({ page }) => {
   await page.goto('/');
   await page.locator('#choose-alkkagi').click();
