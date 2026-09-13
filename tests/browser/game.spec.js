@@ -23,7 +23,11 @@ test('two browser contexts trade shots, share positions, and resume after reload
     const link = await host.locator('#invite-link').inputValue();
     await guest.goto(link); await guest.locator('#room-join').click();
     await expect(guest.locator('#online-role')).toHaveText('나: 백돌');
+    await host.locator('#iron-options button').nth(4).click();await host.locator('#iron-confirm').click();
+    await guest.locator('#iron-options button').nth(4).click();await guest.locator('#iron-confirm').click();
     await expect(host.locator('#status')).toContainText('내 차례');
+    expect(await host.evaluate(()=>stones.filter(s=>s.team===1).some(s=>'iron' in s))).toBe(false);
+    expect(await guest.evaluate(()=>stones.filter(s=>s.team===0).some(s=>'iron' in s))).toBe(false);
     await expect(guest.locator('#strike-pad')).toBeDisabled();
     await shoot(host, 0);
     await expect(guest.locator('#status')).toContainText('내 차례');
@@ -43,9 +47,45 @@ test('two browser contexts trade shots, share positions, and resume after reload
   } finally { await a.close(); await b.close(); }
 });
 
+test('iron selection, owner marker and ordinary prediction work on mobile and desktop',async({page})=>{
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  for(const viewport of [{width:393,height:852},{width:1366,height:900}]){
+    await page.setViewportSize(viewport);await page.goto('/alkkagi.html');
+    await expect(page.locator('#iron-panel')).toBeVisible();
+    await page.locator('#iron-options button').first().click();await page.locator('#iron-confirm').click();
+    await expect(page.locator('#iron-panel')).toBeHidden();
+    await expect(page.locator('#iron-state')).toContainText('대기');
+    await page.locator('#guide-0').click();
+    await page.evaluate(()=>{
+      stones=[{id:0,team:0,x:400,y:400,vx:0,vy:0,alive:true,iron:true},{id:5,team:1,x:550,y:410,vx:0,vy:0,alive:true,iron:true}];
+      drag={s:stones[0],start:{x:400,y:400},end:{x:260,y:400},screenX:200,screenY:200};
+    });
+    await expect.poll(()=>page.evaluate(()=>guideCache?.path.collision)).toBe(true);
+    expect(await page.evaluate(()=>guideCache.path.branches.length)).toBe(2);
+    expect(await page.evaluate(()=>stones.every(s=>s.iron))).toBe(true);
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+    await page.locator('#game').screenshot({path:`test-results/iron-guide-${viewport.width}.png`});
+    await page.evaluate(()=>{cancelDrag();launch(stones[0],100,0);});
+    await expect(page.locator('#iron-state')).toContainText('소진');
+  }
+  expect(errors).toEqual([]);
+});
+
+test('local players select privately with a handoff before the first turn',async({page})=>{
+  await page.goto('/alkkagi.html');await page.locator('#local-mode').click();await page.locator('#accept').click();
+  await expect(page.locator('#iron-picker')).toBeHidden();await page.locator('#iron-reveal').click();
+  await page.locator('#iron-options button').nth(2).click();await page.locator('#iron-confirm').click();
+  await expect(page.locator('#iron-title')).toContainText('2P');await expect(page.locator('#iron-picker')).toBeHidden();
+  await page.locator('#iron-reveal').click();await page.locator('#iron-options button').nth(3).click();await page.locator('#iron-confirm').click();
+  await expect(page.locator('#iron-title')).toHaveText('1P 차례');await page.locator('#iron-reveal').click();
+  await expect(page.locator('#iron-panel')).toBeHidden();
+  expect(await page.evaluate(()=>stones.filter(s=>s.iron).map(s=>s.id))).toEqual([2,8]);
+});
+
 test('offline play, strike selection and edge-limited pull still work', async ({ page }) => {
   await page.goto('/');
   await page.locator('#choose-alkkagi').click();
+  await page.locator('#iron-options button').first().click();await page.locator('#iron-confirm').click();
   await page.locator('#strike-pad').focus(); await page.keyboard.press('ArrowDown');
   await expect(page.locator('#strike-value')).toContainText('백샷');
   await page.keyboard.press('Home'); await expect(page.locator('#strike-value')).toHaveText('중앙 · 무회전');

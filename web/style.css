@@ -25,3 +25,21 @@ header{padding:0 8px}h1{font-size:21px;margin-top:3px}.eyebrow{font-size:8px}
 .game-back{max-width:1120px;margin:10px auto 0;padding:0 16px;font-size:11px}.game-back a{color:#cbb78f;text-decoration:none}.game-back a:focus-visible{outline:2px solid #e4c18a;outline-offset:4px}
 
 .release-version{font:11px/1.6 system-ui,sans-serif;text-align:center;color:#a8b7ac;letter-spacing:.3px;margin:16px 0 4px;overflow-wrap:anywhere}
+.guide-toggle{display:block;margin-top:5px;min-height:32px;padding:5px 7px;border:1px solid #83998e;border-radius:5px;background:transparent;color:#e3eee8;font-size:10px;white-space:nowrap;letter-spacing:0}
+.guide-toggle::before{content:'';display:inline-block;width:7px;height:7px;margin-right:5px;border-radius:50%;background:#829188}
+.guide-toggle[aria-pressed=true]{background:#184944;border-color:#77e4d0;color:#c4fff3}
+.guide-toggle[aria-pressed=true]::before{background:#77e4d0}
+.guide-toggle:disabled{opacity:.4;cursor:default}
+.iron-panel{position:absolute;inset:0;z-index:2;background:#14251f;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:16px;text-align:center}
+.iron-panel[hidden],.iron-panel [hidden]{display:none}
+.iron-panel h2{font-size:20px;letter-spacing:0;margin:0}
+#iron-picker{width:min(100%,380px)}
+#iron-options{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-bottom:24px;min-height:76px;align-items:start}
+#iron-options button{aspect-ratio:1;border-radius:50%;border:2px solid #809589;background:#283830;color:#fff;font-size:16px}
+#iron-options button:nth-child(2),#iron-options button:nth-child(4){margin-top:22px}
+#iron-options button[aria-pressed=true]{border-color:#76ffdf;background:#216252;box-shadow:0 0 0 3px #76ffdf33}
+#iron-confirm:disabled{opacity:.4;cursor:default}
+.iron-state{min-height:20px;text-align:center;font-size:11px;color:#7cf4d8;margin:8px 0}
+@media(orientation:landscape) and (min-width:760px){.iron-state{grid-column:2;margin:0}.iron-panel h2{font-size:20px}}
+@media(max-width:360px){.scoreboard .versus{display:none}}
+@media(orientation:landscape) and (min-width:760px){.scoreboard .player{flex-direction:column;align-items:flex-start}.scoreboard .player:last-child{align-items:flex-end}.scoreboard .stone{order:-1}}

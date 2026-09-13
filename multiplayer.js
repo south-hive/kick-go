@@ -11,11 +11,12 @@ class Room {
     this.code = code; this.players = [null, null]; this.stones = P.setup();
     this.turn = 0; this.phase = 'waiting'; this.revision = 0; this.match = 1;
     this.votes = [false, false]; this.lastActivity = now; this.shotTime = 0;
+    this.ironReady = [false, false];
   }
   seat(index, socket, now = Date.now()) {
     const player = { token: token(), socket, lastSeen: now };
     this.players[index] = player; this.lastActivity = now;
-    if (this.players.every(Boolean)) { this.phase = 'aim'; this.revision++; }
+    if (this.players.every(Boolean)) { this.phase = 'select'; this.revision++; }
     return player;
   }
   resume(secret, socket) {
@@ -26,6 +27,15 @@ class Room {
     return { team, previous, player };
   }
   ready() { return this.players.every(p => p && p.socket && p.socket.readyState === 1); }
+  selectIron(team, message) {
+    if (!this.ready()) throw Error('OPPONENT_OFFLINE');
+    if (this.phase !== 'select' || this.ironReady[team] || message.match !== this.match) throw Error('SELECTION_CLOSED');
+    const stone = this.stones.find(s => s.id === message.stone && s.team === team && s.alive);
+    if (!stone) throw Error('INVALID_SELECTION');
+    stone.iron = true; this.ironReady[team] = true;
+    if (this.ironReady.every(Boolean)) this.phase = 'aim';
+    this.revision++; this.lastActivity = Date.now();
+  }
   shot(team, message) {
     if (!this.ready()) throw Error('OPPONENT_OFFLINE');
     if (this.phase !== 'aim' || this.turn !== team || message.revision !== this.revision || message.match !== this.match) throw Error('NOT_YOUR_TURN');
@@ -49,13 +59,17 @@ class Room {
     if (this.phase !== 'over' || !this.ready() || message.match !== this.match) throw Error('REMATCH_UNAVAILABLE');
     this.votes[team] = true;
     if (this.votes.every(Boolean)) {
-      this.stones = P.setup(); this.turn = 0; this.phase = 'aim';
+      this.stones = P.setup(); this.turn = 0; this.phase = 'select'; this.ironReady = [false, false];
       this.match++; this.revision++; this.votes = [false, false];
     }
     this.lastActivity = Date.now();
   }
-  snapshot() {
-    return { type: 'state', version: VERSION, code: this.code, stones: this.stones,
+  snapshot(viewer) {
+    const stones = this.stones.map(s => {
+      const { iron, ...publicStone } = s;
+      return s.team === viewer ? { ...publicStone, iron: !!iron } : publicStone;
+    });
+    return { type: 'state', version: VERSION, code: this.code, stones, ironReady: [...this.ironReady],
       turn: this.turn, phase: this.phase, revision: this.revision, match: this.match,
       connected: this.players.map(p => !!(p && p.socket && p.socket.readyState === 1)), votes: this.votes };
   }

@@ -34,7 +34,7 @@ function createGameServer({ automatic = true } = {}) {
     wss.handleUpgrade(req, socket, head, ws => wss.emit('connection', ws));
   });
   const send = (ws, data) => { if (ws?.readyState === 1) { if (ws.bufferedAmount > 256 * 1024) { ws.terminate(); return; } ws.send(JSON.stringify(data)); } };
-  const broadcast = room => { const state = room.snapshot(); room.players.forEach(p => send(p?.socket, state)); };
+  const broadcast = room => { room.players.forEach((p, team) => send(p?.socket, room.snapshot(team))); };
   function closeRoom(room, reason) {
     rooms.delete(room.code);
     room.players.forEach(p => { if (p?.socket) { p.socket.room = null; send(p.socket, { type: 'ended', reason }); } });
@@ -74,9 +74,10 @@ function createGameServer({ automatic = true } = {}) {
           const room = ws.room;
           if (!room || room.players[ws.team]?.socket !== ws) throw Error('NOT_JOINED');
           if (m.type === 'shot') { room.shot(ws.team, m); send(ws, { type: 'accepted', request: m.request }); broadcast(room); }
+          else if (m.type === 'selectIron') { room.selectIron(ws.team, m); broadcast(room); }
           else if (m.type === 'rematch') { room.rematch(ws.team, m); broadcast(room); }
           else if (m.type === 'leave') closeRoom(room, 'LEFT');
-          else if (m.type === 'sync') send(ws, room.snapshot());
+          else if (m.type === 'sync') send(ws, room.snapshot(ws.team));
           else throw Error('INVALID_MESSAGE');
         }
       } catch (error) { send(ws, { type: 'error', code: error instanceof SyntaxError ? 'INVALID_MESSAGE' : error.message, request: m?.request }); }

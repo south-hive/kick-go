@@ -68,6 +68,12 @@ class OnlineGame {
     };
   }
   canShoot() { return this.connected && !this.pending && this.state?.phase === 'aim' && this.state.turn === this.session?.team && this.state.connected.every(Boolean); }
+  selectIron(stone) {
+    if (!this.connected || this.pending || this.state?.phase !== 'select' || this.state.ironReady[this.session.team] || !this.state.connected.every(Boolean)) return;
+    this.pending = true;
+    if (!this.send({ type: 'selectIron', stone, match: this.state.match })) this.pending = false;
+    this.change('');
+  }
   send(message) { if (this.socket?.readyState !== WebSocket.OPEN) return false; this.socket.send(JSON.stringify({ version: 1, ...message })); return true; }
   shoot(stone, vx, vy, side, follow) {
     if (!this.canShoot()) return;
@@ -87,6 +93,7 @@ class OnlineGame {
     if (!this.connected || !this.state) return '방을 만들거나 초대 코드를 입력하세요.';
     if (this.state.phase === 'waiting') return '초대 링크를 보내 주세요 · 상대 입장 대기 중';
     if (!this.state.connected.every(Boolean)) return '상대 연결이 끊겼습니다 · 재접속 대기 중';
+    if (this.state.phase === 'select') return this.state.ironReady[this.session.team] ? '선택 완료 · 상대 선택 대기 중' : '금강불괴 돌을 선택하세요';
     if (this.state.phase === 'moving' || this.pending) return '돌이 멈출 때까지 기다려 주세요';
     if (this.state.phase === 'over') return this.state.votes[this.session.team] ? '상대의 재대결 동의를 기다리고 있어요' : '경기 종료 · 둘 다 재대결을 누르면 새 판 시작';
     return this.state.turn === this.session.team ? '내 차례 · 돌을 당겨 조준하세요' : '상대 차례 · 다음 수를 기다려 주세요';

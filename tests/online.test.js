@@ -3,8 +3,9 @@ const assert = require('node:assert/strict');
 const { once } = require('node:events');
 const WebSocket = require('ws');
 const { createGameServer } = require('../server');
+const publicState = state => ({ ...state, stones: state.stones.map(({ iron, ...s }) => s) });
 
-async function harness(t) {
+async function harness(t, select = true) {
   const game = createGameServer({ automatic: false });
   game.server.listen(0, '127.0.0.1'); await once(game.server, 'listening');
   t.after(() => game.close());
@@ -25,6 +26,10 @@ async function harness(t) {
   const host = await connect(); host.send({ type: 'create' }); const h = await host.next(m => m.type === 'joined');
   const guest = await connect(); guest.send({ type: 'join', code: h.code }); const g = await guest.next(m => m.type === 'joined');
   const room = game.rooms.get(h.code);
+  if (select) {
+    room.selectIron(0, { stone: 4, match: 1 }); room.selectIron(1, { stone: 9, match: 1 });
+    game.broadcast(room);
+  }
   const shot = (stone = 0) => ({ type: 'shot', stone, vx: 200, vy: 0, side: 0, follow: -.5, revision: room.revision, match: room.match });
   return { game, connect, host, guest, h, g, room, shot };
 }
@@ -34,7 +39,7 @@ test('two clients join opposite seats and receive identical authoritative states
   assert.equal(h.team, 0); assert.equal(g.team, 1); assert.notEqual(h.token, g.token);
   const a = await host.next(m => m.type === 'state' && m.phase === 'aim');
   const b = await guest.next(m => m.type === 'state' && m.phase === 'aim');
-  assert.deepEqual(a, b); assert.equal(JSON.stringify(a).includes(h.token), false);
+  assert.deepEqual(publicState(a), publicState(b)); assert.equal(JSON.stringify(a).includes(h.token), false);
 });
 
 test('out-of-turn, overpowered, duplicate and opponent-stone shots are rejected', async t => {
@@ -53,7 +58,7 @@ test('a shot completes once, both clients agree, and the guest can counterattack
   for (let i = 0; i < 2000 && room.phase === 'moving'; i++) room.step(1 / 120);
   assert.equal(room.phase, 'aim'); assert.equal(room.turn, 1); game.broadcast(room);
   const a = await host.next(m => m.type === 'state' && m.turn === 1);
-  const b = await guest.next(m => m.type === 'state' && m.turn === 1); assert.deepEqual(a, b);
+  const b = await guest.next(m => m.type === 'state' && m.turn === 1); assert.deepEqual(publicState(a), publicState(b));
   guest.send(shot(5)); await guest.next(m => m.type === 'accepted'); assert.equal(room.phase, 'moving');
 });
 
@@ -78,6 +83,7 @@ test('both players must consent to rematch and leaving ends the room', async t =
   assert.equal(room.match, 1);
   guest.send({ type: 'rematch', match: 1 }); await guest.next(m => m.type === 'state' && m.match === 2);
   assert.equal(room.stones.filter(s => s.alive).length, 10); assert.equal(room.turn, 0);
+  assert.equal(room.phase,'select');assert.deepEqual(room.ironReady,[false,false]);assert.ok(room.stones.every(s=>!s.iron));
   host.send({ ...shot(), match: 1 }); assert.equal((await host.next(m => m.type === 'error')).code, 'NOT_YOUR_TURN');
   guest.send({ type: 'leave' }); await host.next(m => m.type === 'ended'); assert.equal(game.rooms.size, 0);
 });
@@ -89,4 +95,24 @@ test('malformed input does not crash the server and newer connections replace th
   assert.equal((await replacement.next(m => m.type === 'joined')).team, 0);
   assert.equal((await host.next(m => m.type === 'ended')).reason, 'REPLACED');
   assert.equal(room.ready(), true);
+});
+
+test('secret iron selection is required, immutable, private on sync and preserved on reconnect', async t => {
+  const {host,guest,room,shot,connect,h}=await harness(t,false);
+  host.send(shot());assert.equal((await host.next(m=>m.type==='error')).code,'NOT_YOUR_TURN');
+  host.send({type:'selectIron',stone:5,match:1});assert.equal((await host.next(m=>m.type==='error')).code,'INVALID_SELECTION');
+  host.send({type:'selectIron',stone:2,match:1});
+  const own=await host.next(m=>m.type==='state'&&m.ironReady[0]);
+  const rival=await guest.next(m=>m.type==='state'&&m.ironReady[0]);
+  assert.equal(own.stones[2].iron,true);assert.ok(rival.stones.filter(s=>s.team===0).every(s=>!('iron' in s)));
+  host.send({type:'selectIron',stone:3,match:1});assert.equal((await host.next(m=>m.type==='error')).code,'SELECTION_CLOSED');
+  guest.send({type:'selectIron',stone:7,match:1});await guest.next(m=>m.type==='state'&&m.phase==='aim');
+  guest.send({type:'sync'});const synced=await guest.next(m=>m.type==='state'&&m.phase==='aim');
+  assert.equal(synced.stones[7].iron,true);assert.equal('iron' in synced.stones[2],false);
+  const replacement=await connect();replacement.send({type:'resume',code:room.code,token:h.token});
+  const restored=await replacement.next(m=>m.type==='state'&&m.phase==='aim');
+  assert.equal(restored.stones[2].iron,true);assert.equal('iron' in restored.stones[7],false);
+  replacement.send(shot(2));await replacement.next(m=>m.type==='accepted');
+  const consumed=await guest.next(m=>m.type==='state'&&m.phase==='moving');
+  assert.equal(room.stones[2].iron,false);assert.equal('iron' in consumed.stones[2],false);
 });
