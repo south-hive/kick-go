@@ -10,9 +10,13 @@
   try{$('nickname').value=localStorage.getItem('arcade-nickname')||'';}catch{}
   const selected=gameName[params.get('game')]?params.get('game'):'alkkagi';
   $('game').value=selected;$('join-game').value=selected;
-  const inviteHash=new URLSearchParams(location.hash.slice(1));
-  if(gameName[inviteHash.get('game')])$('join-game').value=inviteHash.get('game');
-  if(/^[a-f0-9]{12}$/i.test(inviteHash.get('code')||''))$('code').value=inviteHash.get('code').toUpperCase();
+  let inviteHash;
+  function readInvite(){
+    inviteHash=new URLSearchParams(location.hash.slice(1));
+    if(gameName[inviteHash.get('game')])$('join-game').value=inviteHash.get('game');
+    $('code').value=/^[a-f0-9]{12}$/i.test(inviteHash.get('code')||'')?inviteHash.get('code').toUpperCase():'';
+  }
+  readInvite();window.addEventListener('hashchange',readInvite);
   function say(message){$('status').textContent=message;}
   function endpoint(game){return connections[game].endpoint();}
   function remember(){try{sessionStorage.setItem('arcade-active-game',activeGame);}catch{}}
