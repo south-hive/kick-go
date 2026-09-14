@@ -17,12 +17,12 @@ class OnlineGame {
     } catch { return null; }
   }
   storage(value) { try { if (value) sessionStorage.setItem('kick-go-session', JSON.stringify(value)); else sessionStorage.removeItem('kick-go-session'); } catch {} }
-  saved() { try { const s = JSON.parse(sessionStorage.getItem('kick-go-session')); return s?.endpoint === this.endpoint() && typeof s.code === 'string' && typeof s.token === 'string' ? s : null; } catch { return null; } }
+  saved() { try { const s = JSON.parse(sessionStorage.getItem('kick-go-session')); return s?.endpoint === this.endpoint() && typeof s.code === 'string' && (s.role==='spectator'||typeof s.token === 'string') ? s : null; } catch { return null; } }
   change(text) { if (text !== undefined) this.message = text; this.onChange(); }
-  begin(action, code) {
+  begin(action, code, options={}) {
     this.stop(false); this.storage(null); this.state = null; this.session = null; this.pending = false; this.retry = 0;
     if (!this.endpoint()) { this.change('온라인 대전 서버 연결을 준비 중입니다. 지금은 혼자 하기와 한 기기 둘이 하기를 이용해 주세요.'); return; }
-    this.active = true; this.action = { type: action, code }; this.connect();
+    this.active = true; this.action = { type: action, code, ...options }; this.connect();
   }
   restore(session) {
     this.stop(false); this.state = null; this.session = session; this.active = true; this.retry = 0; this.action = { type: 'resume', code: session.code, token: session.token }; this.connect();
@@ -35,7 +35,7 @@ class OnlineGame {
     this.timeout = setTimeout(() => { if (this.socket === ws && !this.connected) { this.change('서버 응답을 기다리는 중입니다. 처음 접속은 조금 걸릴 수 있어요.'); ws.close(); } }, 20000);
     ws.onopen = () => {
       if (ws !== this.socket) return;
-      const action = this.session ? { type: 'resume', code: this.session.code, token: this.session.token } : this.action;
+      const action = this.session ? (this.session.role==='spectator'?{type:'watch',code:this.session.code}:{ type: 'resume', code: this.session.code, token: this.session.token }) : this.action;
       ws.send(JSON.stringify({ ...action, version: 1 }));
     };
     ws.onmessage = event => {
@@ -43,7 +43,7 @@ class OnlineGame {
       let m; try { m = JSON.parse(event.data); } catch { return; }
       if (m.type === 'joined') {
         clearTimeout(this.timeout); this.retry = 0; this.connected = true; this.pending = false;
-        this.session = { endpoint: this.endpoint(), code: m.code, token: m.token, team: m.team }; this.storage(this.session);
+        this.session = { endpoint: this.endpoint(), code: m.code, token: m.token, team: m.team, role:m.role||'player' }; this.storage(this.session);
         this.change('');
       } else if (m.type === 'state') {
         if (m.version !== 1 || !this.session || m.code !== this.session.code) return;
@@ -83,7 +83,7 @@ class OnlineGame {
     this.change('');
   }
   selectIron(stone) {
-    if (!this.connected || this.pending || this.state?.phase !== 'select' || this.state.ironReady[this.session.team] || !this.state.connected.every(Boolean)) return;
+    if (this.session?.role==='spectator' || !this.connected || this.pending || this.state?.phase !== 'select' || this.state.ironReady[this.session.team] || !this.state.connected.every(Boolean)) return;
     this.pending = true;
     if (!this.send({ type: 'selectIron', stone, match: this.state.match })) this.pending = false;
     this.change('');
@@ -95,7 +95,7 @@ class OnlineGame {
     if (!this.send({ type: 'shot', stone, vx, vy, side, follow, revision: this.state.revision, match: this.state.match })) this.pending = false;
     this.change('');
   }
-  rematch() { if (this.connected && this.state?.phase === 'over') this.send({ type: 'rematch', match: this.state.match }); }
+  rematch() { if (this.session?.role!=='spectator' && this.connected && this.state?.phase === 'over') this.send({ type: 'rematch', match: this.state.match }); }
   stop(leave = true) {
     if (leave) { this.send({ type: 'leave' }); this.storage(null); this.session = null; this.state = null; }
     this.active = false; this.connected = false; this.pending = false;
@@ -105,6 +105,7 @@ class OnlineGame {
   text() {
     if (this.message) return this.message;
     if (!this.connected || !this.state) return '방을 만들거나 초대 코드를 입력하세요.';
+    if(this.session.role==='spectator')return this.state.phase==='select'?'금강불괴 선택 중 · 관전':this.state.phase==='over'?'경기 종료 · 관전':`관전 중 · ${this.state.names?.[this.state.turn]||'플레이어'} 차례`;
     if (this.state.phase === 'waiting') return '초대 링크를 보내 주세요 · 상대 입장 대기 중';
     if (!this.state.connected.every(Boolean)) return '상대 연결이 끊겼습니다 · 재접속 대기 중';
     if (this.state.phase === 'select') return this.state.ironReady[this.session.team] ? '선택 완료 · 상대 선택 대기 중' : '금강불괴 돌을 선택하세요';

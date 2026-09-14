@@ -5,12 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
   <meta name="theme-color" content="#182722">
   <title>나무 위의 한 수 · 알까기</title>
-  <link rel="stylesheet" href="style.css?v=1.5.0">
+  <link rel="stylesheet" href="style.css?v=1.6.0">
 </head>
 <body>
   <nav class="game-back"><a href="./">← 게임 선택</a></nav>
   <main class="app">
-    <header><div><span class="eyebrow">WOOD & STONE</span><h1>나무 위의 한 수<span>알까기</span></h1></div><button id="sound" class="icon" aria-label="효과음 켜기" aria-pressed="false">♪</button></header>
+    <header><div><span class="eyebrow">WOOD & STONE</span><h1>나무 위의 한 수<span>알까기</span></h1></div><button id="sound" class="icon" aria-label="효과음 켜기" aria-pressed="false">♪</button></header><p class="hint"><a href="lobby.html?game=alkkagi&amp;return=1" style="color:inherit">← 온라인 로비</a></p>
     <section class="scoreboard" aria-label="남은 돌">
       <div class="player active" id="black-player"><i class="stone black"></i><div><span id="black-label">나의 흑돌</span><strong id="black-count">5</strong><button id="guide-0" class="guide-toggle" aria-label="1P 겁쟁이 모드" aria-pressed="false">겁쟁이 모드</button></div></div>
       <div class="versus">5 STONE MATCH<span>VS</span></div>
@@ -36,7 +36,7 @@
       <div class="strike-control"><span class="strike-top">전진</span><button id="strike-pad" aria-label="타격점 선택. 위는 전진, 아래는 백샷, 좌우는 옆 회전. 방향키로 조절하고 Home 키로 중앙 복귀." aria-describedby="strike-description"><span class="cross horizontal"></span><span class="cross vertical"></span><span id="strike-dot"></span></button><span class="strike-bottom">백샷</span></div>
       <div class="strike-info"><strong>타격점 <span id="strike-value" role="status">중앙 · 무회전</span></strong><p id="strike-description">돌 그림을 터치해 회전을 정하세요.<br>발사 방향 기준 · 돌과 충돌한 뒤 적용</p><button id="strike-reset">중앙으로</button></div>
     </section>
-    <p class="hint"><span>↙</span> 내 돌을 뒤로 당긴 뒤 놓으세요.<br><small>멀리 당길수록 강하게 · 중앙 연결쇠는 튕겨 나오는 장애물</small></p>
+    <p class="hint"><span>↙</span> 내 돌을 뒤로 당긴 뒤 놓으세요.<br><small>멀리 당길수록 강하게 · 중앙 연결쇠는 튕겨 나오는 장애물<br>돌 중심이 판 가장자리를 넘으면 탈락</small></p>
     <footer><div class="modes" role="group" aria-label="플레이 모드"><button id="ai-mode" class="selected" aria-pressed="true">혼자</button><button id="local-mode" aria-pressed="false">한 기기 둘이</button><button id="online-mode" aria-pressed="false">온라인 대전</button></div><button id="restart" class="restart">↻ 새 게임</button></footer>
     <section id="online-panel" class="online-panel" hidden aria-label="온라인 대전 방">
       <div class="online-title"><strong>친구와 온라인 대전</strong><span id="online-role"></span></div>
@@ -47,9 +47,9 @@
       <small>방장 흑돌 · 참가자 백돌 · 연결이 끊기면 10분 안에 같은 창으로 돌아오세요.</small>
     </section>
     <p class="caption">손끝의 힘, 한 수의 승부.</p>
-  <p class="release-version" data-release>v1.5.0 · 로컬</p>
+  <p class="release-version" data-release>v1.6.0 · 로컬</p>
 </main>
   <dialog id="confirm"><h2>새 판을 시작할까요?</h2><p>진행 중인 경기는 초기화됩니다.</p><div><button id="cancel">계속 하기</button><button id="accept" class="primary">새로 시작</button></div></dialog>
-  <script src="config.js?v=1.5.0"></script><script src="physics.js?v=1.5.0"></script><script src="ai.js?v=1.5.0"></script><script src="online.js?v=1.5.0"></script><script src="game.js?v=1.5.0"></script>
+  <script src="config.js?v=1.6.0"></script><script src="physics.js?v=1.6.0"></script><script src="ai.js?v=1.6.0"></script><script src="online.js?v=1.6.0"></script><script src="game.js?v=1.6.0"></script>
 </body>
 </html>

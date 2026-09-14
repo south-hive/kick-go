@@ -1,6 +1,7 @@
 'use strict';
 const { randomBytes, randomInt, timingSafeEqual } = require('node:crypto');
 const P = require('./web/physics');
+const L = require('./lobby-rules');
 const VERSION = 1;
 const token = () => randomBytes(24).toString('hex');
 const counts = stones => [0, 1].map(team => stones.filter(s => s.alive && s.team === team).length);
@@ -12,12 +13,12 @@ class Room {
     this.firstPlayer = firstPlayer; this.turn = firstPlayer; this.phase = 'waiting'; this.revision = 0; this.match = 1;
     this.guideRemaining = [0,1].map(team=>team===firstPlayer?1:2); this.guideArmed = [false,false];
     this.votes = [false, false]; this.lastActivity = now; this.shotTime = 0;
-    this.ironReady = [false, false];
+    this.ironReady = [false, false]; this.spectators = new Set();
   }
   seat(index, socket, now = Date.now()) {
     const player = { token: token(), socket, lastSeen: now };
     this.players[index] = player; this.lastActivity = now;
-    if (this.players.every(Boolean)) { this.phase = 'select'; this.revision++; }
+    if (this.players.every(Boolean)) { this.phase = this.lobby ? 'lobby' : 'select'; this.revision++; }
     return player;
   }
   resume(secret, socket) {
@@ -79,7 +80,7 @@ class Room {
       const { iron, ...publicStone } = s;
       return s.team === viewer ? { ...publicStone, iron: !!iron } : publicStone;
     });
-    return { type: 'state', version: VERSION, code: this.code, stones, ironReady: [...this.ironReady],
+    return { ...L.metadata(this), role: viewer === null ? 'spectator' : 'player', spectators: this.spectators.size, type: 'state', version: VERSION, code: this.code, stones, ironReady: [...this.ironReady],
       firstPlayer: this.firstPlayer, guideRemaining: [...this.guideRemaining], guideArmed: [...this.guideArmed],
       turn: this.turn, phase: this.phase, revision: this.revision, match: this.match,
       connected: this.players.map(p => !!(p && p.socket && p.socket.readyState === 1)), votes: this.votes };

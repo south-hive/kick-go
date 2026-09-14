@@ -2,7 +2,7 @@ const { test, expect } = require('@playwright/test');
 test.beforeEach(async({page})=>{await page.addInitScript(()=>{Math.random=()=>.1;});});
 
 async function online(page) {
-  await page.goto('/'); await page.locator('#choose-alkkagi').click(); await page.locator('#online-mode').click(); await page.locator('#accept').click();
+  await page.goto('/alkkagi.html'); await page.evaluate(()=>setMode('online')); // Legacy invitation flow remains supported.
 }
 async function shoot(page, id) {
   await page.locator('#game').scrollIntoViewIfNeeded();

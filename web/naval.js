@@ -9,6 +9,7 @@
   const canFire=()=>state?.phase==='battle'&&!observer()&&state.turn===state.team&&state.connected.every(Boolean)&&net.connected&&!net.pending;
   function persist(){try{sessionStorage.setItem('naval-draft:v1',JSON.stringify({key:draftKey,ships:draft}));}catch{}}
   function onState(next){
+    if(next.phase==='lobby'){location.replace('lobby.html?game=naval&return=1');return;}
     const key=`${next.code}:${next.match}:${next.team}`;
     if(draftKey!==key){text('naval-effect','');draftKey=key;draft=[];selected='carrier';vertical=false;lastEvent=`${next.match}:${next.lastShot?.id||0}`;try{const saved=JSON.parse(sessionStorage.getItem('naval-draft:v1'));if(saved?.key===key)draft=M.validate(saved.ships,false);}catch{}}
     if(next.role==='player'&&next.ready[next.team])draft=next.ownShips;
@@ -55,5 +56,5 @@
   $('naval-sound').onclick=()=>{sound=!sound;if(sound){try{audio||=new(window.AudioContext||window.webkitAudioContext)();audio.resume().catch(()=>{});}catch{sound=false;}}$('naval-sound').setAttribute('aria-pressed',String(sound));$('naval-sound').setAttribute('aria-label',sound?'효과음 끄기':'효과음 켜기');};
   document.addEventListener('visibilitychange',()=>{if(!document.hidden&&net.connected)net.send('sync');});
   const hash=location.hash.match(/^#naval=([a-f0-9]{12})$/i);if(hash)$('naval-code').value=hash[1].toUpperCase();
-  render();const saved=net.saved();if(saved&&(!hash||saved.code===$('naval-code').value))net.restore(saved);
+  render();const saved=net.saved();if(new URLSearchParams(location.search).get('watch')==='1'&&hash)net.begin('watch',hash[1]);else if(saved&&(!hash||saved.code===$('naval-code').value))net.restore(saved);
 })();

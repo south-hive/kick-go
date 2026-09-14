@@ -5,7 +5,7 @@ class NavalConnection{
   store(value){try{if(value)sessionStorage.setItem('naval-session:v1',JSON.stringify(value));else sessionStorage.removeItem('naval-session:v1');}catch{}}
   saved(){try{const s=JSON.parse(sessionStorage.getItem('naval-session:v1'));return s?.endpoint===this.endpoint()&&typeof s.code==='string'&&(s.role==='spectator'||typeof s.token==='string')?s:null;}catch{return null;}}
   change(message){if(message!==undefined)this.message=message;this.onChange();}
-  begin(type,code,nickname){this.stop();this.store(null);this.session=null;this.state=null;this.action={type,code,nickname};this.retry=0;if(!this.endpoint()){this.change('온라인 서버 주소가 필요합니다. 배포된 게임 주소로 접속해 주세요.');return;}this.active=true;this.connect();}
+  begin(type,code,nickname,options={}){this.stop();this.store(null);this.session=null;this.state=null;this.action={type,code,nickname,...options};this.retry=0;if(!this.endpoint()){this.change('온라인 서버 주소가 필요합니다. 배포된 게임 주소로 접속해 주세요.');return;}this.active=true;this.connect();}
   restore(session){this.stop();this.session=session;this.state=null;this.active=true;this.retry=0;this.connect();}
   connect(){if(!this.active)return;clearTimeout(this.timer);clearTimeout(this.timeout);this.connected=false;this.change(this.retry?'연결이 끊겨 같은 방에 재접속 중…':'대전 서버 연결 중… 처음 접속은 잠시 걸릴 수 있어요.');const ws=new WebSocket(this.endpoint());this.socket=ws;this.timeout=setTimeout(()=>{if(this.socket===ws&&!this.connected)ws.close();},20000);
     ws.onopen=()=>{if(ws!==this.socket)return;const action=this.session?(this.session.role==='spectator'?{type:'watch',code:this.session.code}:{type:'resume',code:this.session.code,token:this.session.token}):this.action;ws.send(JSON.stringify({version:1,...action}));};
