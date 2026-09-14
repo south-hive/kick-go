@@ -2,7 +2,7 @@
   'use strict';
   const SIZE=1200, EDGE=86, R=18;
   // Equal-mass elastic impacts transfer all normal velocity; board friction handles slowing.
-  const RESTITUTION=1, FRICTION=135, SLOW_SPEED=300, EXTRA_FRICTION=135;
+  const RESTITUTION=1, FRICTION=135, SLOW_SPEED=300, EXTRA_FRICTION=135, STOP_SPEED=.1;
   const hinges=[{x:214.5,y:584,w:111,h:32},{x:874.5,y:584,w:111,h:32}];
   // Arcade spin: preserve the launch frame, then release stored rotation on stone impact.
   function shoot(s,vx,vy,side=0,follow=0){
@@ -29,9 +29,20 @@
     s.x+=nx*depth;s.y+=ny*depth;const v=s.vx*nx+s.vy*ny;
     if(v<0){s.vx-=1.74*v*nx;s.vy-=1.74*v*ny;}return v<-15;
   }
+  function stop(s){
+    s.vx=0;s.vy=0;
+    if(s.spinPower!==undefined)s.spinPower=0;
+    if(s.spinSide!==undefined)s.spinSide=0;
+    if(s.spinFollow!==undefined)s.spinFollow=0;
+  }
+  function fallOutside(s,onFall){
+    if(!s.alive)return true;
+    if(s.x>=EDGE&&s.x<=SIZE-EDGE&&s.y>=EDGE&&s.y<=SIZE-EDGE)return false;
+    s.alive=false;stop(s);onFall(s);return true;
+  }
   function step(stones,dt,onHit=()=>{},onFall=()=>{},onCollision=()=>{}){
-    for(const s of stones){if(!s.alive)continue;s.x+=s.vx*dt;s.y+=s.vy*dt;
-      if(s.x<EDGE||s.x>SIZE-EDGE||s.y<EDGE||s.y>SIZE-EDGE){s.alive=false;onFall(s);continue;}
+    for(const s of stones){if(fallOutside(s,onFall))continue;s.x+=s.vx*dt;s.y+=s.vy*dt;
+      if(fallOutside(s,onFall))continue;
       for(const h of hinges)if(hitRect(s,h)){onHit(s,Math.hypot(s.vx,s.vy));onCollision(s,null);}
       // Keep fast chain shots lively; smoothly brake the slow glide afterward.
       const speed=Math.hypot(s.vx,s.vy);
@@ -53,13 +64,18 @@
         const normal=other.vx*gx+other.vy*gy;
         if(normal<0){other.vx-=1.55*normal*gx;other.vy-=1.55*normal*gy;}
         other.spinPower=0;other.spinSide=0;other.spinFollow=0;
-        onHit(other,-closing);onCollision(a,b);continue;
+        onHit(other,-closing);onCollision(a,b);fallOutside(other,onFall);continue;
       }
+      // Friendly impacts spend the protection but retain ordinary momentum transfer.
+      if(closing<0&&a.team===b.team){if(a.iron)a.iron=false;if(b.iron)b.iron=false;}
       a.x-=nx*overlap;a.y-=ny*overlap;b.x+=nx*overlap;b.y+=ny*overlap;
       const v=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny;if(v<0){const impulse=-v*(1+RESTITUTION)/2;a.vx-=impulse*nx;a.vy-=impulse*ny;b.vx+=impulse*nx;b.vy+=impulse*ny;releaseSpin(a,-v);releaseSpin(b,-v);onHit(a,-v);onCollision(a,b);}
+      // Resolve this contact, then remove fallen stones before any later pair can hit them.
+      fallOutside(a,onFall);fallOutside(b,onFall);
     }
+    for(const s of stones)if(s.alive&&Math.hypot(s.vx,s.vy)<=STOP_SPEED)stop(s);
   }
-  const moving=stones=>stones.some(s=>s.alive&&Math.hypot(s.vx,s.vy)>.1);
+  const moving=stones=>stones.some(s=>s.alive&&Math.hypot(s.vx,s.vy)>STOP_SPEED);
   function predict(stones,id,vx,vy,side=0,follow=0){
     const sim=stones.map(s=>({...s,iron:false})),shooter=sim.find(s=>s.id===id&&s.alive);
     const result={approach:[],branches:[],collision:false};

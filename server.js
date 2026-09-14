@@ -6,7 +6,9 @@ const { randomBytes } = require('node:crypto');
 const { WebSocketServer } = require('ws');
 const { Room, VERSION } = require('./multiplayer');
 const { attachNaval } = require('./naval-server');
-const files = Object.fromEntries(['index.html', 'battleship.html', 'naval.css', 'naval-model.js', 'naval-client.js', 'naval.js', 'robots.html', 'robots.css', 'robot-model.js', 'robots.js', 'alkkagi.html', 'flight.html', 'style.css', 'arcade.css', 'game.js', 'physics.js', 'online.js', 'config.js', 'hub.js', 'flight-model.js', 'flight.js', 'assets/pywel-panorama.png', 'assets/damiane-sprites-v2.png'].map(f => ['/' + f, f]));
+const { attachLobby } = require('./lobby-server');
+const L = require('./lobby-rules');
+const files = Object.fromEntries(['lobby.html', 'lobby.css', 'lobby.js', 'index.html', 'battleship.html', 'naval.css', 'naval-model.js', 'naval-client.js', 'naval.js', 'robots.html', 'robots.css', 'robot-model.js', 'robots.js', 'alkkagi.html', 'flight.html', 'style.css', 'arcade.css', 'game.js', 'physics.js', 'online.js', 'config.js', 'hub.js', 'flight-model.js', 'flight.js', 'assets/pywel-panorama.png', 'assets/damiane-sprites-v2.png'].map(f => ['/' + f, f]));
 files['/'] = 'index.html';
 files['/ai.js'] = 'ai.js';
 const types = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.png': 'image/png' };
@@ -25,9 +27,10 @@ function createGameServer({ automatic = true, firstPlayer } = {}) {
     });
   });
   const naval = attachNaval(server);
+  const lobby = attachLobby(server,{alkkagi:rooms,naval:naval.rooms});
   const wss = new WebSocketServer({ noServer: true, maxPayload: 4096, perMessageDeflate: false });
   server.on('upgrade', (req, socket, head) => {
-    if (req.url === '/ws/naval') return;
+    if (['/ws/naval','/ws/lobby'].includes(req.url)) return;
     const origins = (process.env.ALLOWED_ORIGINS || 'https://south-hive.github.io').split(',');
     let ownOrigin = false;
     try { const origin = new URL(req.headers.origin); ownOrigin = origin.host === req.headers.host; } catch {}
@@ -35,9 +38,10 @@ function createGameServer({ automatic = true, firstPlayer } = {}) {
     wss.handleUpgrade(req, socket, head, ws => wss.emit('connection', ws));
   });
   const send = (ws, data) => { if (ws?.readyState === 1) { if (ws.bufferedAmount > 256 * 1024) { ws.terminate(); return; } ws.send(JSON.stringify(data)); } };
-  const broadcast = room => { room.players.forEach((p, team) => send(p?.socket, room.snapshot(team))); };
+  const broadcast = room => { room.players.forEach((p, team) => send(p?.socket, room.snapshot(team))); room.spectators.forEach(ws=>send(ws,room.snapshot(null))); };
   function closeRoom(room, reason) {
     rooms.delete(room.code);
+    room.spectators.forEach(ws=>{ws.room=null;send(ws,{type:'ended',reason});});room.spectators.clear();
     room.players.forEach(p => { if (p?.socket) { p.socket.room = null; send(p.socket, { type: 'ended', reason }); } });
   }
   wss.on('connection', ws => {
@@ -51,16 +55,21 @@ function createGameServer({ automatic = true, firstPlayer } = {}) {
         if (++ws.messages > 80) { ws.close(1008, 'Rate limit'); return; }
         m = JSON.parse(raw.toString());
         if (!m || m.version !== VERSION) throw Error('VERSION_MISMATCH');
-        if (m.type === 'create' || m.type === 'join' || m.type === 'resume') {
+        if (m.type === 'create' || m.type === 'join' || m.type === 'resume' || m.type === 'watch') {
           if (ws.room) throw Error('ALREADY_JOINED');
           let room, team, player;
           if (m.type === 'create') {
             if (rooms.size >= 100) throw Error('SERVER_FULL');
             let code; do { code = randomBytes(6).toString('hex').toUpperCase(); } while (rooms.has(code));
-            room = new Room(code, Date.now(), firstPlayer); rooms.set(code, room); team = 0; player = room.seat(team, ws);
+            room = new Room(code, Date.now(), firstPlayer); L.configure(room,m); rooms.set(code, room); team = 0; player = room.seat(team, ws);
           } else {
             room = rooms.get(typeof m.code === 'string' ? m.code.toUpperCase() : '');
             if (!room) throw Error('ROOM_NOT_FOUND');
+            if(m.type==='watch'){
+              if(room.spectators.size>=20)throw Error('SPECTATORS_FULL');
+              room.spectators.add(ws);ws.room=room;ws.spectator=true;ws.team=null;
+              send(ws,{type:'joined',version:VERSION,code:room.code,team:null,role:'spectator'});broadcast(room);return;
+            }
             if (m.type === 'resume') {
               const resumed = room.resume(m.token, ws); team = resumed.team; player = resumed.player;
               if (resumed.previous && resumed.previous !== ws) { resumed.previous.room = null; send(resumed.previous, { type: 'ended', reason: 'REPLACED' }); resumed.previous.close(); }
@@ -69,12 +78,20 @@ function createGameServer({ automatic = true, firstPlayer } = {}) {
               team = 1; player = room.seat(team, ws);
             }
           }
-          ws.room = room; ws.team = team;
-          send(ws, { type: 'joined', version: VERSION, code: room.code, token: player.token, team }); broadcast(room);
+          if(m.type!=='resume')L.namePlayer(room,team,m.nickname);
+          ws.room = room; ws.team = team; ws.spectator=false;
+          send(ws, { type: 'joined', version: VERSION, code: room.code, token: player.token, team, role:'player' }); broadcast(room);
         } else {
           const room = ws.room;
+          if(ws.spectator&&room){
+            if(m.type==='sync')send(ws,room.snapshot(null));
+            else if(m.type==='leave'){room.spectators.delete(ws);ws.room=null;send(ws,{type:'ended',reason:'LEFT'});broadcast(room);}
+            else throw Error('READ_ONLY');
+            return;
+          }
           if (!room || room.players[ws.team]?.socket !== ws) throw Error('NOT_JOINED');
-          if (m.type === 'shot') { room.shot(ws.team, m); send(ws, { type: 'accepted', request: m.request }); broadcast(room); }
+          if(m.type==='prepare'){L.prepare(room,ws.team,m,'select');broadcast(room);}
+          else if (m.type === 'shot') { room.shot(ws.team, m); send(ws, { type: 'accepted', request: m.request }); broadcast(room); }
           else if (m.type === 'selectIron') { room.selectIron(ws.team, m); broadcast(room); }
           else if (m.type === 'guide') { room.armGuide(ws.team, m); broadcast(room); }
           else if (m.type === 'rematch') { room.rematch(ws.team, m); broadcast(room); }
@@ -86,7 +103,8 @@ function createGameServer({ automatic = true, firstPlayer } = {}) {
     });
     ws.on('close', () => {
       const room = ws.room, p = room?.players[ws.team];
-      if (p?.socket === ws) { p.socket = null; p.lastSeen = Date.now(); broadcast(room); }
+      if(ws.spectator&&room){room.spectators.delete(ws);broadcast(room);return;}
+      if (p?.socket === ws) { p.socket = null; p.lastSeen = Date.now(); if(room.phase==='lobby')room.lobbyReady=[false,false]; broadcast(room); }
     });
   });
   let last = performance.now(), accumulator = 0, lastBroadcast = 0;
@@ -109,12 +127,12 @@ function createGameServer({ automatic = true, firstPlayer } = {}) {
   }, 15000);
   async function close() {
     clearInterval(simulation); clearInterval(maintenance);
-    await naval.close();
+    await lobby.close(); await naval.close();
     wss.clients.forEach(ws => ws.terminate());
     await new Promise(resolve => wss.close(resolve));
     await new Promise(resolve => server.close(resolve));
   }
-  return { server, rooms, naval, close, broadcast };
+  return { server, rooms, naval, lobby, close, broadcast };
 }
 if (require.main === module) {
   const game = createGameServer(), port = Number(process.env.PORT) || 8080;

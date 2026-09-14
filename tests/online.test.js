@@ -146,3 +146,21 @@ test('guide credit is reserved once, survives reconnect, and is spent only by an
   game.broadcast(room);resumed.send(guide());assert.equal((await resumed.next(m=>m.type==='error')).code,'NO_GUIDES');
   assert.equal(room.guideRemaining[1],2);
 });
+
+test('edge contact is eliminated before the server decides the winner',()=>{
+  const {Room}=require('../multiplayer');
+  const room=new Room('edge-test',Date.now(),0);
+  room.phase='moving';
+  room.stones=[
+    {id:0,team:0,x:86.001,y:400,vx:0,vy:0,alive:true},
+    {id:5,team:1,x:122.002,y:400,vx:-1,vy:0,alive:true}
+  ];
+  room.step(1/120);
+  assert.equal(room.phase,'over');
+  for(const team of [0,1]){
+    const state=room.snapshot(team);
+    assert.equal(state.stones[0].alive,false);
+    assert.equal(state.stones[1].alive,true);
+    assert.ok(state.stones.every(s=>s.vx===0&&s.vy===0));
+  }
+});

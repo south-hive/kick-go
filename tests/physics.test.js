@@ -120,10 +120,64 @@ test('iron stone stays fixed and rebounds an enemy once with reduced restitution
     assert.ok(b.vx>490);assert.ok(Math.abs(a.vx)<1e-9);
   }
 });
-test('shooting forfeits iron, friendly contact does not consume it, prediction cannot reveal it',()=>{
+test('shooting forfeits iron, friendly contact consumes it, prediction cannot reveal it',()=>{
   const a={...stone(400,400),id:0},b={...stone(437,400),id:1,team:1,iron:true};
   const normal=P.predict([a,{...b,iron:false}],0,500,0);
   assert.deepEqual(P.predict([a,b],0,500,0),normal);assert.equal(b.iron,true);
-  b.team=0;P.shoot(a,500,0);P.step([a,b],1/120);assert.equal(b.iron,true);assert.ok(b.vx>490);
-  P.shoot(b,500,0);assert.equal(b.iron,false);
+  b.team=0;P.shoot(a,500,0);P.step([a,b],1/120);assert.equal(b.iron,false);assert.ok(b.vx>490);
+  b.iron=true;P.shoot(b,500,0);assert.equal(b.iron,false);
+});
+
+test('slow edge contact eliminates the stone before the turn can settle on all four sides',()=>{
+  const transforms=[(x,y)=>[x,y],(x,y)=>[P.SIZE-x,y],(x,y)=>[y,x],(x,y)=>[y,P.SIZE-x]];
+  for(const transform of transforms){
+    const make=(x,vx)=>{const [px,py]=transform(x,400),[endX,endY]=transform(x+vx,400);return stone(px,py,endX-px,endY-py);};
+    const a=make(P.EDGE+.001,0),b=make(P.EDGE+36.002,-1),fallen=[];
+    P.step([a,b],1/120,()=>{},s=>fallen.push(s));
+    assert.equal(a.alive,false);assert.equal(b.alive,true);
+    assert.deepEqual(fallen,[a]);assert.equal(P.moving([a,b]),false);
+    P.step([a,b],1/120,()=>{},s=>fallen.push(s));assert.equal(fallen.length,1);
+  }
+});
+
+test('a stone pushed off the edge cannot strike a later neighbour in the same step',()=>{
+  for(const iron of [false,true]){
+    const a=stone(86.001,400),b={...stone(122.002,400,-100),team:1,iron};
+    const c=stone(86.001,436.01,0,-10),control={...c},contacts=[];
+    P.step([control],1/120);
+    P.step([a,b,c],1/120,()=>{},()=>{},(x,y)=>contacts.push([x,y]));
+    assert.equal(a.alive,false);assert.deepEqual(c,control);
+    assert.equal(contacts.length,1);assert.deepEqual(contacts[0],[a,b]);
+    assert.equal(a.vx,0);assert.equal(a.vy,0);
+  }
+});
+
+test('outside stones cannot return inward and edge equality keeps a stone on the board',()=>{
+  for(const [x,y] of [[86,86],[1114,86],[86,1114],[1114,1114]]){
+    const a=stone(x,y);P.step([a],1/120);assert.equal(a.alive,true);
+  }
+  const a=stone(85.99,400,100),b=stone(121.99,400);let contacts=0;
+  P.step([a,b],1/120,()=>{},()=>{},()=>contacts++);
+  assert.equal(a.alive,false);assert.equal(contacts,0);assert.equal(b.vx,0);
+});
+
+test('settled stones have exactly zero velocity and no residual spin',()=>{
+  for(const speed of [.001,.1]){
+    const a={...stone(400,400,speed),spinPower:10,spinSide:1,spinFollow:1};
+    P.step([a],0);
+    assert.equal(P.moving([a]),false);
+    assert.deepEqual([a.vx,a.vy,a.spinPower,a.spinSide,a.spinFollow],[0,0,0,0,0]);
+  }
+  const a=stone(400,400,.101);P.step([a],0);assert.equal(P.moving([a]),true);
+});
+
+
+test('friendly impact consumes protection in either pair order, but mere resting contact does not',()=>{
+  for(const reversed of [false,true]){
+    const a=stone(400,400,500),b={...stone(437,400),iron:true};
+    P.step(reversed?[b,a]:[a,b],1/120);
+    assert.equal(b.iron,false);assert.ok(b.vx>490);assert.ok(Math.abs(a.vx)<1e-9);
+  }
+  const a=stone(400,400),b={...stone(435,400),iron:true};
+  P.step([a,b],1/120);assert.equal(b.iron,true);
 });

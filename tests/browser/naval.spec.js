@@ -6,7 +6,7 @@ test('two captains and a spectator deploy privately, trade shots, resume and rem
   const contexts=await Promise.all([0,1,2].map(()=>browser.newContext({baseURL:'http://127.0.0.1:8091',viewport:{width:393,height:852}})));
   const pages=await Promise.all(contexts.map(c=>c.newPage())),[host,guest,watch]=pages;const errors=[];pages.forEach(p=>p.on('pageerror',e=>errors.push(e.message)));
   try{
-    await host.goto('/');await host.locator('#choose-naval').click();await host.locator('#naval-nickname').fill('하늘');await host.locator('#naval-create').click();
+    await host.goto('/battleship.html');await host.locator('#naval-nickname').fill('하늘');await host.locator('#naval-create').click();
     await expect(host.locator('#naval-room-code')).toHaveText(/^[A-F0-9]{12}$/);const code=await host.locator('#naval-room-code').textContent();
     await guest.goto(`/battleship.html#naval=${code}`);await guest.locator('#naval-nickname').fill('바다');await guest.locator('#naval-join').click();
     await watch.goto(`/battleship.html#naval=${code}`);await watch.locator('#naval-watch').click();

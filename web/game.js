@@ -12,7 +12,7 @@ let aiBelief;
 let ironTeam=0,ironRevealed=false,ironChoice=null;
 function ironOwner(){return mode==='online'?net.session?.team:mode==='ai'?0:turn;}
 function renderIron(){
-  const selecting=phase==='select';
+  const selecting=phase==='select'&&!(mode==='online'&&net.session?.role==='spectator');
   const handoff=phase==='handoff';
   const team=mode==='online'?net.session?.team:ironTeam;
   const waiting=mode==='online'&&(net.state?.ironReady?.[team]||!net.connected||!net.state?.connected.every(Boolean));
@@ -31,7 +31,7 @@ function renderIron(){
     $('status').textContent=waiting?'상대 선택·연결 대기 중':'금강불괴 돌 선택 중';
   }
   const owner=ironOwner();
-  $('iron-state').textContent=selecting||handoff||phase==='waiting'||owner===undefined?'':`${owner+1}P 금강불괴 · ${stones.some(s=>s.team===owner&&s.iron&&s.alive)?'대기':'소진'}`;
+  $('iron-state').textContent=selecting||handoff||phase==='waiting'||owner==null?'':`${owner+1}P 금강불괴 · ${stones.some(s=>s.team===owner&&s.iron&&s.alive)?'대기':'소진'}`;
 }
 for(let index=0;index<5;index++){
   const button=document.createElement('button');button.textContent=String(index+1);button.dataset.index=index;
@@ -178,6 +178,7 @@ let onlineTargets=null;
 const net=new OnlineGame(applyOnlineState,()=>{if(mode==='online')renderOnline();});
 function applyOnlineState(state){
   if(mode!=='online')return;
+  if(state.phase==='lobby'){location.replace('lobby.html?game=alkkagi&return=1');return;}
   const changed=phase!==state.phase||turn!==state.turn;
   if(changed&&state.phase==='select')ironChoice=null;
   if(changed){cancelDrag();updateStrike();}
@@ -194,21 +195,21 @@ function renderOnline(){
   syncGuides();
   const text=net.text(),session=net.session,state=net.state;
   $('online-message').textContent=text;$('status').textContent=text;
-  $('online-role').textContent=session?(session.team===0?'나: 흑돌':'나: 백돌'):'';
-  $('black-label').textContent=session?.team===0?'나의 흑돌':'상대 흑돌';$('white-label').textContent=session?.team===1?'나의 백돌':'상대 백돌';
+  $('online-role').textContent=session?(session.role==='spectator'?'관전 중':session.team===0?'나: 흑돌':'나: 백돌'):'';
+  $('black-label').textContent=state?.names?.[0]||(session?.team===0?'나의 흑돌':'상대 흑돌');$('white-label').textContent=state?.names?.[1]||(session?.team===1?'나의 백돌':'상대 백돌');
   $('black-player').classList.toggle('active',turn===0);$('white-player').classList.toggle('active',turn===1);
   $('strike-pad').disabled=!canSetStrike();$('strike-reset').disabled=!canSetStrike();
   $('online-lobby').hidden=!!session;$('online-room').hidden=!session;
   $('room-create').disabled=net.active;$('room-join').disabled=net.active;
   $('room-reconnect').hidden=net.connected||net.active||!session;
   if(session){const invite=new URL(location.href);invite.hash='room='+session.code;$('invite-link').value=invite.href;}
-  const canRematch=net.connected&&state?.phase==='over'&&state.connected.every(Boolean)&&!state.votes[session.team];
+  const canRematch=session?.role!=='spectator'&&net.connected&&state?.phase==='over'&&state.connected.every(Boolean)&&!state.votes[session.team];
   const requested=state?.phase==='over'&&state.votes[1-session?.team]&&!state.votes[session?.team];
   $('rematch-message').textContent=state?.phase==='over'?(requested?'상대가 재대결을 요청했습니다.':state.votes[session?.team]?'재대결 요청 완료 · 상대 응답 대기 중':''):'';
   $('restart').disabled=!canRematch;$('restart').textContent='↻ 재대결';
   $('again').disabled=!canRematch;$('again').textContent=requested?'재대결 수락':state?.votes[session?.team]?'상대 동의 대기 중':'재대결 신청 ↗';
 }
-$('online-mode').onclick=()=>{if(mode!=='online')requestReset('online');};
+$('online-mode').onclick=()=>{location.href='lobby.html?game=alkkagi';};
 $('room-create').onclick=()=>net.begin('create');
 $('room-form').onsubmit=e=>{e.preventDefault();const code=$('room-code').value.trim().toUpperCase();if(/^[A-F0-9]{12}$/.test(code))net.begin('join',code);};
 $('room-leave').onclick=()=>requestReset('ai');
@@ -217,5 +218,6 @@ $('invite-copy').onclick=async()=>{try{await navigator.clipboard.writeText($('in
 document.addEventListener('visibilitychange',()=>{last=0;cancelDrag();if(!document.hidden&&mode==='online')net.send({type:'sync'});});
 syncGuides();reset();resize();requestAnimationFrame(frame);
 const invited=new URLSearchParams(location.hash.slice(1)).get('room'),saved=net.saved();
-if(saved&&(!invited||invited.toUpperCase()===saved.code)){setMode('online');net.restore(saved);}
+if(new URLSearchParams(location.search).get('watch')==='1'&&invited){setMode('online');net.begin('watch',invited);}
+else if(saved&&(!invited||invited.toUpperCase()===saved.code)){setMode('online');net.restore(saved);}
 else if(invited&&/^[a-fA-F0-9]{12}$/.test(invited)){setMode('online');$('room-code').value=invited.toUpperCase();$('online-panel').scrollIntoView({block:'nearest'});}
