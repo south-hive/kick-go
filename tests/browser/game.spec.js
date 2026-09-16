@@ -126,7 +126,8 @@ test('offline play, strike selection and edge-limited pull still work', async ({
     const power = shotVector().p; drag = null; return power;
   });
   expect(edgePower).toBe(1);
-  await shoot(page, 0); await expect.poll(() => page.evaluate(() => turn), { timeout: 2000 }).toBe(1);
+  // CI rendering can advance the fixed-step simulation slower than wall time.
+  await shoot(page, 0); await expect.poll(() => page.evaluate(() => turn), { timeout: 10000, intervals: [100] }).toBe(1);
 });
 
 test('aim cancels with Escape, release on cancel button and a second touch without spending a guide',async({page})=>{
