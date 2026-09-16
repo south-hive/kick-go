@@ -164,3 +164,25 @@ test('edge contact is eliminated before the server decides the winner',()=>{
     assert.ok(state.stones.every(s=>s.vx===0&&s.vy===0));
   }
 });
+
+test('guided shot announces the nickname to players and spectators before physics begins',async t=>{
+  const {host,guest,room,shot,connect,h,game}=await harness(t);
+  room.players[0].name='용감한 고양이';
+  const watcher=await connect();watcher.send({type:'watch',code:room.code});await watcher.next(m=>m.type==='joined');
+  host.send({type:'guide',match:room.match,revision:room.revision});await host.next(m=>m.type==='state'&&m.guideArmed[0]);
+  const before=room.stones.map(s=>({...s}));host.send(shot());await host.next(m=>m.type==='accepted');
+  const cues=await Promise.all([host,guest,watcher].map(c=>c.next(m=>m.type==='state'&&m.shotCue)));
+  assert.deepEqual(cues.map(s=>s.shotCue.name),Array(3).fill('용감한 고양이'));
+  assert.ok(cues.every(s=>s.shotCue.id===cues[0].shotCue.id));
+  assert.ok(cues.every(s=>!('pendingShot' in s)));assert.equal(room.phase,'moving');assert.equal(room.guideRemaining[0],0);
+  assert.deepEqual(room.stones,before);
+  host.send(shot());assert.equal((await host.next(m=>m.type==='error')).code,'NOT_YOUR_TURN');
+  for(let i=0;i<120;i++)room.step(1/120);
+  assert.deepEqual(room.stones,before);assert.ok(room.shotCue.remaining<.36);
+  const replacement=await connect();replacement.send({type:'resume',code:room.code,token:h.token});const resumed=await replacement.next(m=>m.type==='state');
+  assert.equal(resumed.shotCue.id,cues[0].shotCue.id);assert.ok(resumed.shotCue.remaining<.36);
+  for(let i=0;i<42;i++)room.step(1/120);
+  assert.equal(room.shotCue,null);assert.equal(room.pendingShot,null);assert.ok(room.stones.some(s=>Math.hypot(s.vx,s.vy)>0));
+  game.broadcast(room);await watcher.next(m=>m.type==='state'&&!m.shotCue&&m.stones.some(s=>Math.hypot(s.vx,s.vy)>0));
+  assert.equal(room.guideRemaining[0],0);
+});

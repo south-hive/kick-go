@@ -37,7 +37,7 @@ for(const kind of ['alkkagi','naval'])test(`${kind}: public listing, private inv
   host.send({type:'prepare',ready:true,match:1});await host.next(m=>m.type==='state'&&m.lobbyReady[0]);
   resumed.send({type:'prepare',ready:true,match:1});const started=await resumed.next(m=>m.type==='state'&&m.phase!=='lobby');assert.equal(started.phase,kind==='alkkagi'?'select':'placing');
   const observed=await watch.next(m=>m.type==='state'&&m.phase===started.phase);
-  if(kind==='alkkagi')assert.ok(observed.stones.every(s=>!('iron' in s)));else{assert.deepEqual(observed.ownShips,[]);assert.deepEqual(observed.opponentShips,[]);}
+  if(kind==='alkkagi')assert.ok(observed.stones.every(s=>s.iron===false));else{assert.deepEqual(observed.ownShips,[]);assert.deepEqual(observed.opponentShips,[]);}
   const room=(kind==='alkkagi'?game.rooms:game.naval.rooms).get(code);
   // Returning from a finished game preserves names and requires both rematch votes.
   room.phase='over';const oldMatch=room.match;
@@ -49,13 +49,21 @@ for(const kind of ['alkkagi','naval'])test(`${kind}: public listing, private inv
   assert.equal(game.lobby.listing().some(r=>r.code===privateRoom.code),false);
   const invited=await client(path);invited.send({type:'join',code:privateRoom.code,nickname:'초대 손님'});assert.equal((await invited.next(m=>m.type==='joined')).team,1);
 });
-test('both games share the directory and alkkagi watchers receive no secret selection',async t=>{
+test('both games share the directory and alkkagi watchers see both protections while players only see their own',async t=>{
   const {game,client}=await harness(t),a=await client('/ws'),b=await client('/ws/naval');
   for(const ws of [a,b])ws.send({type:'create',lobby:true,public:true});
   const aj=await a.next(m=>m.type==='joined');await b.next(m=>m.type==='joined');
   assert.deepEqual(new Set(game.lobby.listing().map(r=>r.game)),new Set(['alkkagi','naval']));
   const room=game.rooms.get(aj.code);room.stones[0].iron=true;room.stones[5].iron=true;
   const watcher=await client('/ws');watcher.send({type:'watch',code:aj.code});const identity=await watcher.next(m=>m.type==='joined');assert.equal(identity.token,undefined);
-  const snapshot=await watcher.next(m=>m.type==='state');assert.ok(snapshot.stones.every(s=>!('iron' in s)));
+  const snapshot=await watcher.next(m=>m.type==='state');assert.deepEqual(snapshot.stones.filter(s=>s.iron).map(s=>s.id),[0,5]);
+  for(const team of [0,1]){
+    const playerView=room.snapshot(team);
+    assert.ok(playerView.stones.filter(s=>s.team!==team).every(s=>!('iron' in s)));
+    assert.equal(playerView.stones.find(s=>s.id===team*5).iron,true);
+  }
+  room.stones[0].iron=false;game.broadcast(room);
+  const spent=await watcher.next(m=>m.type==='state'&&m.stones[0].iron===false);
+  assert.equal(spent.stones[5].iron,true);
   watcher.send({type:'shot',stone:0,vx:100,vy:0,side:0,follow:0});assert.equal((await watcher.next(m=>m.type==='error')).code,'READ_ONLY');
 });
