@@ -58,7 +58,7 @@ test('two browser contexts trade shots, share positions, and resume after reload
     await expect(first.locator('#guide-'+firstTeam)).toBeDisabled();
     await host.locator('#online-panel').scrollIntoViewIfNeeded();
     await host.screenshot({ path: 'test-results/online-mobile.png', fullPage: true });
-    await guest.locator('#room-leave').click(); await guest.locator('#accept').click();
+    await guest.locator('#online-tools summary').click();await guest.locator('#room-leave').click(); await guest.locator('#accept').click();
     await expect(host.locator('#online-message')).toContainText('종료');
     expect(errors).toEqual([]);
   } finally { await a.close(); await b.close(); await c.close(); }

@@ -7,6 +7,22 @@
     const position=team=>(flipped()?team===1:team===0)?'bottom':'top';
     const arena=$('game').parentElement;
     const now=()=>pausedAt??performance.now();
+    function visibleBoard(){
+      const rect=arena.getBoundingClientRect(),view=root.visualViewport;
+      const top=Math.max(0,(view?.offsetTop||0)-rect.top),bottom=Math.min(rect.height,(view?view.offsetTop+view.height:root.innerHeight)-rect.top);
+      return {height:rect.height,top,bottom};
+    }
+    function placeSpeech(el,team){
+      const side=position(team);el.dataset.position=side;if(el.hidden)return;
+      const view=visibleBoard(),gap=Math.min(16,view.height*.05),height=el.offsetHeight;
+      const low=Math.max(gap,view.top+gap),high=Math.min(view.height-height-gap,view.bottom-height-gap);
+      el.style.top=`${Math.max(gap,side==='top'?Math.min(low,high):high)}px`;el.style.bottom='auto';
+    }
+    function placeCue(){
+      const el=$('shot-cue');el.dataset.position=position(cueTeam);if(el.hidden)return;
+      const view=visibleBoard();el.style.paddingTop=`${Math.max(0,view.top)}px`;el.style.paddingBottom=`${Math.max(0,view.height-view.bottom)}px`;
+    }
+
     function hideCue(){$('shot-cue').hidden=true;cueKey=null;}
     function guideCue(reaction){
       const event=reaction.event;if(event.remaining<=0)return;
@@ -80,12 +96,12 @@
         for(const team of [0,1]){
           const queue=queues[team];if(queue[0]&&time-queue[0].start>=queue[0].duration){queue.shift();if(queue[0])queue[0].start=time;}
           const el=$('character-reaction-'+team),current=queue[0];el.hidden=!current;
-          el.dataset.position=position(team);
           if(current){el.querySelector('strong').textContent=current.name;el.querySelector('span').textContent=current.line;}
+          placeSpeech(el,team);
         }
         if(highlights[0]&&time-highlights[0].start>=highlights[0].duration){highlights.shift();if(highlights[0])highlights[0].start=time;}
         const current=highlights[0],el=$('shot-highlight');el.hidden=!current;
-        $('shot-cue').dataset.position=position(cueTeam);
+        placeCue();
         if(current){el.dataset.position=position(current.team);el.dataset.combo=current.eventType==='shot:combo-hit'?'true':'false';el.dataset.count=String(current.event.count||'');el.dataset.numeric=/^\d+타$/.test(current.line)?'true':'false';el.style.setProperty('--combo-size',String(1+Math.min(4,Math.max(0,(current.event.count||1)-1))*.12));}
         if(current&&highlightKey!==current.id){
           highlightKey=current.id;el.textContent=current.line;el.dataset.speaker=current.name;el.dataset.style=current.style;
@@ -93,6 +109,7 @@
           el.style.animation='none';void el.offsetWidth;el.style.animation='';
           el.style.animationPlayState=pausedAt===null?'running':'paused';
         }
+        if(current)placeSpeech(el,current.team);
         if(!current)highlightKey=null;
       },
       reset,

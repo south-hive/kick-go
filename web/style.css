@@ -88,10 +88,65 @@ header{padding:0 8px}h1{font-size:21px;margin-top:3px}.eyebrow{font-size:8px}
 .shot-highlight,.shot-highlight[data-style=shout]{width:max-content;max-width:92%;white-space:normal;overflow-wrap:anywhere;word-break:keep-all;text-align:center;font-size:clamp(28px,7.2vw,44px);line-height:1.2;padding:14px 16px;border-width:2px;box-shadow:0 6px 24px #0009}
 .shot-highlight[data-position=top]{top:5%;bottom:auto}.shot-highlight[data-position=bottom]{top:auto;bottom:5%}
 .shot-highlight[data-style=shout]::before{font-size:14px}
-.shot-highlight[data-combo=true]{font-size:clamp(42px,11vw,66px);scale:var(--combo-size,1);transform-origin:center;max-width:72%;color:#ffe48a}
+.shot-highlight[data-combo=true]{font-size:calc(clamp(42px,11vw,66px) * var(--combo-size,1));scale:1;transform-origin:center;max-width:72%;color:#ffe48a}
 .shot-cue[data-position=top]{place-items:start center}.shot-cue[data-position=bottom]{place-items:end center}
 .shot-cue-card{padding:14px 10px;margin:3% 0;max-width:94%}.shot-cue-card b{font-size:clamp(28px,7vw,44px);letter-spacing:-1px;word-break:keep-all;overflow-wrap:anywhere}.shot-cue-card strong{font-size:20px;margin:6px 0}.shot-cue-card small{margin-top:8px}
 .arena::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:6;box-shadow:inset 0 0 30px 8px #ffbd63;opacity:var(--combo-glow,0)}
 @media(prefers-reduced-motion:reduce){.arena::after{display:none}.shot-highlight[data-combo=true]{scale:1}}
 
 .shot-highlight[data-combo=true][data-numeric=false]{font-size:clamp(26px,6.5vw,36px);scale:1;max-width:92%;border-width:calc(2px * var(--combo-size,1))}.shot-highlight[data-combo=true][data-numeric=false]::after{content:attr(data-count) ' CHAIN';display:block;font-size:18px;color:#fff;margin-top:8px;letter-spacing:2px}
+/* Keep the playable board and essential controls in one viewport. */
+body{min-height:100dvh}
+.game-back{height:40px;max-width:1120px;margin:0 auto;padding:0 12px;display:flex;align-items:center;justify-content:space-between;gap:6px}
+.game-back .icon{width:32px;height:32px;font-size:20px;flex:none}
+.app{height:calc(100dvh - 40px);min-height:0;width:100%;max-width:1120px;margin:auto;padding:0 8px max(4px,env(safe-area-inset-bottom));display:grid;grid-template-columns:minmax(0,1fr) 110px;grid-template-rows:32px 64px 28px minmax(0,1fr) 40px 72px 44px;grid-template-areas:'rules rules' 'score score' 'status iron' 'board board' 'power cancel' 'spin spin' 'footer footer';gap:4px;align-content:stretch}
+.app>.hint,.app>.caption{display:none}
+.app>.rules-panel{grid-area:rules;margin:0;gap:8px;font-size:12px;padding-right:85px;flex-wrap:nowrap}
+.rules-panel select{padding:4px 8px;min-height:30px}.rules-panel>span{display:none}
+.app>.scoreboard{grid-area:score;width:100%;margin:0;padding:2px 4px;gap:6px}
+.scoreboard .player,.scoreboard .player:last-child{flex-direction:row;align-items:center;gap:6px}
+.scoreboard .player>div{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:6px}
+.scoreboard .player span{font-size:11px;max-width:105px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.scoreboard .player strong{font-size:20px;line-height:1}
+.scoreboard .stone{width:24px;height:24px;flex:none}.scoreboard .versus{display:none}
+.guide-toggle{grid-column:1 / -1;margin-top:3px;min-height:32px;padding:3px 5px}.guide-toggle small{display:none}
+.app>.status{grid-area:status;height:auto;min-width:0;justify-content:flex-start;gap:5px}.status p{font-size:11px;margin:0;line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.app>.iron-state{grid-area:iron;margin:0;min-height:0;align-self:center;font-size:10px}
+.app>.arena{grid-area:board;align-self:center;justify-self:center;width:auto;height:auto;max-width:100%;max-height:100%;min-height:0;min-width:0;aspect-ratio:1;block-size:100%;border-radius:8px}
+.app>.power{grid-area:power;width:100%;margin:0;gap:6px;align-self:center;font-size:10px}
+.app>.aim-actions{grid-area:cancel;margin:0;min-height:0;align-items:center}#cancel-aim{min-height:36px;padding:5px 10px}
+.app>.spin-panel{grid-area:spin;width:100%;margin:0;padding:3px 8px;gap:14px;min-height:0}
+#strike-pad{width:54px;height:54px}.strike-top,.strike-bottom{font-size:9px;line-height:1}.strike-control{gap:0}
+.strike-info p{display:none}.strike-info strong{font-size:11px}.strike-info strong span{display:inline;margin-left:6px}.strike-info button{min-height:30px;margin-top:3px;padding:3px 10px}
+.app>footer{grid-area:footer;width:100%;margin:0;gap:4px;flex-wrap:nowrap}.modes{padding:2px;gap:0}.modes button,.restart{padding:8px;font-size:11px;min-height:38px;white-space:nowrap}
+#online-tools{position:absolute;right:12px;top:42px;z-index:12;font-size:12px}#online-tools>summary{cursor:pointer;padding:7px 10px;border:1px solid #718071;border-radius:6px;background:#203c32;color:#eee9de;list-style:none}#online-tools>summary::-webkit-details-marker{display:none}
+#online-tools[open]>.online-panel{position:fixed;z-index:12;right:8px;top:80px;width:min(440px,calc(100vw - 16px));max-height:calc(100dvh - 92px);overflow:auto;margin:0;box-shadow:0 12px 36px #000b}
+@media(max-width:350px){.game-back{padding:0 6px;font-size:10px}.app{padding-left:4px;padding-right:4px;grid-template-columns:minmax(0,1fr) 96px}.scoreboard .player span{max-width:85px}.modes button,.restart{padding:7px 6px;font-size:10px}.strike-info strong span{font-size:10px}}
+@media(orientation:landscape) and (min-width:640px){
+ .app{grid-template-columns:minmax(0,1fr) 240px;grid-template-rows:32px 64px 28px 24px 40px minmax(64px,1fr) 44px;grid-template-areas:'board rules' 'board score' 'board status' 'board iron' 'board cancel' 'board spin' 'board footer';gap:4px 12px}
+ .app>.power{grid-area:cancel;width:calc(100% - 108px);justify-self:start}.app>.aim-actions{justify-self:end;width:104px}.app>.rules-panel{padding-right:75px}
+ #online-tools{right:max(12px,calc((100vw - 1120px)/2 + 12px))}
+}
+@media(orientation:landscape) and (max-height:440px){
+ .game-back{height:32px}.app{height:calc(100dvh - 32px);grid-template-columns:minmax(0,1fr) 230px;grid-template-rows:30px 58px 24px 18px 36px minmax(54px,1fr) 36px;gap:2px 8px}
+ #online-tools{top:33px}#online-tools>summary{padding:6px}.app>.spin-panel{padding:0 4px;gap:8px}#strike-pad{width:42px;height:42px}.modes button,.restart{min-height:32px;padding:5px}.guide-toggle{min-height:30px}.strike-info button{min-height:28px}
+}
+@media(orientation:portrait){.app:has(#spin-panel[hidden]){grid-template-rows:32px 64px 28px minmax(0,1fr) 40px 0 44px}}
+
+.board-slot{grid-area:board;width:100%;height:100%;min-width:0;min-height:0;display:grid;place-items:center;container-type:size}.board-slot>.arena{width:min(100cqw,100cqh);height:min(100cqw,100cqh);max-width:100%;max-height:100%;aspect-ratio:1;border-radius:8px}
+@media(orientation:landscape) and (max-height:440px){.game-back #help-open{min-height:30px;height:30px;padding:3px 7px}}
+.game-back{height:calc(40px + env(safe-area-inset-top));padding-top:env(safe-area-inset-top)}.app{height:calc(100dvh - 40px - env(safe-area-inset-top))}
+#online-tools{top:calc(42px + env(safe-area-inset-top))}#online-tools[open]>.online-panel{top:calc(80px + env(safe-area-inset-top));max-height:calc(100dvh - 92px - env(safe-area-inset-top) - env(safe-area-inset-bottom))}
+@media(orientation:landscape) and (max-height:440px){.game-back{height:calc(32px + env(safe-area-inset-top))}.app{height:calc(100dvh - 32px - env(safe-area-inset-top))}#online-tools{top:calc(33px + env(safe-area-inset-top))}}
+/* Desktop is the primary play surface; compact controls are a mobile fallback. */
+.desktop-title{display:none}
+@media(orientation:landscape) and (min-width:1024px) and (min-height:650px){
+ .game-back{max-width:1600px;padding-left:20px;padding-right:20px;font-size:13px;gap:20px}.desktop-title{display:block;font-family:serif;font-size:20px;font-weight:500;color:#f2e6cc;margin-right:auto}
+ .app{max-width:1600px;padding-left:16px;padding-right:16px;grid-template-columns:minmax(0,1fr) 340px;grid-template-rows:64px 90px 40px 24px 48px minmax(112px,1fr) 48px;column-gap:24px}
+ .app>.rules-panel{align-content:center;align-items:center;flex-wrap:wrap;font-size:14px;gap:6px 10px}.rules-panel select{min-height:36px;padding:6px 12px}.rules-panel>span{display:block;flex-basis:100%;font-size:11px;line-height:1.4;color:#bbc8bc}
+ .app>.scoreboard{padding:8px 2px}.scoreboard .player span{font-size:13px;max-width:125px}.scoreboard .player strong{font-size:27px}.scoreboard .stone{width:30px;height:30px}.guide-toggle{min-height:40px;font-size:12px;padding:5px 8px}
+ .app>.status p{font-size:14px;line-height:1.4}.app>.iron-state{font-size:12px}
+ .app>.power{font-size:12px;width:calc(100% - 116px)}.app>.aim-actions{width:110px}#cancel-aim{min-height:42px;font-size:13px}
+ .app>.spin-panel{padding:12px;gap:18px}#strike-pad{width:92px;height:92px}.strike-top,.strike-bottom{font-size:11px;line-height:1.2}.strike-control{gap:3px}.strike-info{min-width:0}.strike-info strong{font-size:14px}.strike-info strong span{display:block;margin:5px 0 0;font-size:13px}.strike-info p{display:block;font-size:11px;line-height:1.6;margin:8px 0}.strike-info button{min-height:36px;font-size:12px;padding:5px 12px}
+ .modes button,.restart{min-height:42px;font-size:12px;padding:8px 10px}
+ #online-tools{right:max(20px,calc((100vw - 1600px)/2 + 20px));font-size:13px}
+}

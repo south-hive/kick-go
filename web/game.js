@@ -247,7 +247,7 @@ function setMode(next){
   if(mode==='online'&&next!=='online'){net.stop();history.replaceState(null,'',location.pathname+location.search);}
   mode=next;onlineTargets=null;onlineMatch=null;
   for(const key of ['ai','local','online']){$(key+'-mode').classList.toggle('selected',mode===key);$(key+'-mode').setAttribute('aria-pressed',mode===key);}
-  $('online-panel').hidden=mode!=='online';
+  $('online-panel').hidden=mode!=='online';$('online-tools').hidden=mode!=='online';
   syncGuides();
   $('black-label').textContent=mode==='ai'?'나의 흑돌':'플레이어 1';$('white-label').textContent=mode==='ai'?'상대 백돌':'플레이어 2';
   reset();if(mode==='online'){phase='waiting';renderOnline();}
@@ -281,6 +281,9 @@ function renderOnline(){
   syncRules();syncGuides();
   if(!net.connected)remoteEvents.reset();
   const text=net.text(),session=net.session,state=net.state;
+  if(!session)$('online-tools').open=true;
+  else if(!$('online-tools').dataset.joined){$('online-tools').open=false;$('online-tools').dataset.joined='true';}
+  if(!session)delete $('online-tools').dataset.joined;
   if(!state)effectHooks.emit('session:ended',{});
   $('online-message').textContent=text;$('status').textContent=text;
   $('online-role').textContent=session?(session.role==='spectator'?'관전 중':session.team===0?'나: 흑돌':'나: 백돌'):'';
