@@ -157,3 +157,6 @@ body{min-height:100dvh}
  .app>footer .modes button{min-width:0;padding:5px 2px;font-size:10px}
  .app>footer .restart{padding:5px;font-size:10px}
 }
+
+.shot-combo{position:absolute;left:50%;top:48%;transform:translate(-50%,-50%);z-index:8;display:flex;justify-content:center;gap:5px;max-width:94%;padding:6px 8px;border-radius:12px;background:#172a22e8;border:1px solid #ffe29a99;pointer-events:none;white-space:nowrap;box-shadow:0 4px 18px #0005}
+.shot-combo b{font-size:clamp(16px,4vw,28px);line-height:1.3;color:#ffe29a;text-shadow:0 2px #513b20}.shot-combo b:last-child{color:#fff5ce}

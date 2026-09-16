@@ -144,14 +144,14 @@ test('guide hook occurs once before motion and resumes with remaining time witho
   assert.throws(()=>Shots.plan(P.setup(),shot,{ruleset:'classic',guideName:'안내'}),/RULE_DISABLED/);
 });
 
-test('combo hooks count opponent falls in time order, ignore own falls and reset on the next shot',()=>{
+test('multi-knockout counts appear at first impacts, exclude survivors and reset on the next shot',()=>{
   const make=()=>[[0,0,930,400],[5,1,1072,347],[6,1,1038,427],[7,1,1083,442]].map(([id,team,x,y])=>({id,team,x,y,vx:0,vy:0,alive:true}));
   for(const id of ['first-shot','next-shot']){
     const board=make(),record=Shots.plan(board,{stone:0,vx:1360,vy:0},{ruleset:'classic',id});
     const combos=record.events.filter(e=>e.type==='shot:combo-hit');
     assert.deepEqual(combos.map(e=>e.count),[1,2,3]);assert.equal(record.result.ownRemoved,1);
-    for(const combo of combos){const fall=record.events.find(e=>e.type==='stone:fall'&&e.stone===combo.stone);assert.equal(combo.tick,fall.tick);assert.equal(combo.actorTeam,0);assert.equal(combo.targetTeam,1);}
-    assert.ok(!record.events.some(e=>e.type==='shot:knockout'));
+    for(const combo of combos){const fall=record.events.find(e=>e.type==='stone:fall'&&e.stone===combo.stone);assert.ok(combo.tick<fall.tick);assert.ok(record.events.some(e=>e.type==='stone:collision'&&e.tick===combo.tick&&e.stones.includes(combo.stone)));assert.equal(combo.actorTeam,0);assert.equal(combo.targetTeam,1);}
+    assert.equal(new Set(combos.map(e=>e.stone)).size,3);
     const seen=[],playback=new Shots.Playback(record,board,event=>seen.push(event));playback.start();
     assert.ok(!playback.snapshot(0).events.some(e=>e.type==='shot:combo-hit'));
     playback.advance(combos[0].time);assert.deepEqual(playback.snapshot(0).events.filter(e=>e.type==='shot:combo-hit').map(e=>e.count),[1]);
@@ -188,4 +188,30 @@ test('a hinge rebound spends shatter eligibility before reaching opposing iron',
       assert.ok(!snapshot.events.some(e=>e.type==='iron:clash'));
     }
   }
+});
+
+
+test('ordinary hits and single knockouts never show combo counts',()=>{
+  const stone=(id,team,x,y)=>({id,team,x,y,vx:0,vy:0,alive:true});
+  for(const [board,shot,removed] of [
+    [[stone(0,0,400,400),stone(5,1,437,400)],{stone:0,vx:100,vy:0},0],
+    [[stone(0,0,1060,400),stone(5,1,1097,400),stone(6,1,600,800)],{stone:0,vx:500,vy:0},1],
+  ]){
+    const record=Shots.plan(board,shot,{ruleset:'classic'});
+    assert.ok(record.events.some(e=>e.type==='stone:collision'));
+    assert.equal(record.result.enemyRemoved,removed);
+    assert.ok(!record.events.some(e=>e.type==='shot:combo-hit'));
+    assert.ok(record.events.every((e,i)=>e.sequence===i));
+  }
+});
+
+test('multi-knockout counts skip a struck opponent that survives',()=>{
+  const board=[[0,0,930,400],[5,1,1072,347],[6,1,1038,427],[7,1,1083,442],[8,1,970,390]].map(([id,team,x,y])=>({id,team,x,y,vx:0,vy:0,alive:true}));
+  const record=Shots.plan(board,{stone:0,vx:1360,vy:0},{ruleset:'classic'});
+  assert.equal(record.result.enemyRemoved,2);
+  assert.ok(record.events.some(e=>e.type==='stone:collision'&&e.stones.includes(8)));
+  assert.equal(record.frames.at(-1).find(s=>s.id===8).alive,true);
+  const hits=record.events.filter(e=>e.type==='shot:combo-hit');
+  assert.deepEqual(hits.map(e=>e.stone),[5,7]);assert.deepEqual(hits.map(e=>e.count),[1,2]);
+  assert.ok(record.events.every((e,i)=>e.sequence===i&&e.id===`${record.id}:${i}`));
 });

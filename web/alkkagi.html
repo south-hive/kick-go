@@ -19,6 +19,7 @@
     <div class="status"><span id="turn-dot"></span><p id="status" role="status" aria-live="polite">흑돌 차례 · 돌을 당겨 조준하세요</p></div>
     <div class="board-slot"><section class="arena" aria-label="알까기 게임판">
       <canvas id="game" aria-label="내 돌을 누르고 뒤로 당겼다가 놓으면 반대 방향으로 발사됩니다."></canvas>
+      <div id="shot-combo" class="shot-combo" role="status" aria-live="polite" aria-label="이번 샷 타수" hidden></div>
       <div id="shot-cue" class="shot-cue" role="status" aria-live="polite" hidden><div class="shot-cue-card"><span>겁쟁이 모드 발동!</span><strong id="shot-cue-name"></strong><b id="shot-cue-line"></b><small>계산은 완벽… 이제 쏜다!</small></div></div>
       <div id="character-reaction-0" class="character-reaction" role="status" hidden><strong></strong><span></span></div>
       <div id="character-reaction-1" class="character-reaction" role="status" hidden><strong></strong><span></span></div>
