@@ -37,7 +37,12 @@
       if(!reaction.resumed)cueTone();
     }
     function highlight(reaction,style){
-      if(highlights.length<16)highlights.push({...reaction,style,start:highlights.length?null:now()});
+      if(reaction.presentation==='latest'){
+        // Replace this event's previous tier immediately, even while another shout is queued.
+        for(let i=highlights.length-1;i>=0;i--)if(highlights[i].eventType===reaction.eventType&&highlights[i].team===reaction.team)highlights.splice(i,1);
+        if(highlights[0])highlights[0].start=null;
+        highlights.unshift({...reaction,style,start:now()});
+      }else if(highlights.length<16)highlights.push({...reaction,style,start:highlights.length?null:now()});
     }
     const effects=new Map([
       ['ring',(reaction,effect)=>{const event=reaction.event;if(Number.isFinite(event.x)&&Number.isFinite(event.y))rings.push({x:event.x,y:event.y,start:now(),strong:true,color:effect.color||'#ffe4a0'});}],
@@ -55,8 +60,8 @@
       el.hidden=!el.children.length;
     }
     function react(reaction){
-      // Hit counts have their own immediate, cumulative display, never a speech queue.
-      if(reaction.eventType==='shot:combo-hit')return;
+      // Silence is explicit in the dialogue data; never discard an entire event type.
+      if(reaction.presentation==='silent')return;
       // Reconnect restores the current guide card, not past speech/sounds/particles.
       const selected=reaction.resumed?reaction.effects.filter(effect=>effect.type==='guide-cue'):reaction.effects;
       if(!reaction.resumed&&reaction.line&&!selected.some(effect=>['caption','shout','guide-cue'].includes(effect.type))){

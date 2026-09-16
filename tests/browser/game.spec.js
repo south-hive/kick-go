@@ -353,6 +353,7 @@ test('combo hits accumulate immediately, persist during play and clear together'
   for(const count of [1,2,3]){
     await page.evaluate(count=>alkkagiEffects.emit('shot:combo-hit',{id:'hit-'+count,count,actorTeam:0,targetTeam:1,x:1100,y:400}),count);
     await expect(el).toHaveText(Array.from({length:count},(_,i)=>`${i+1}타`).join(''));
+    await expect(page.locator('#shot-highlight')).toHaveText(['하나 나갔쥬?','또 나갔쥬?','계속 나가쥬? 약오르쥬!'][count-1]);
   }
   await page.waitForTimeout(1200);await expect(el).toHaveText('1타2타3타');
   await page.screenshot({path:'test-results/cumulative-combo.png'});

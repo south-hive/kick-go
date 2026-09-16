@@ -91,7 +91,7 @@ test('meme persona taunts only the correct opponent and keeps numbered combo cal
     for(const type of ['guide:used','iron:clash','shot:knockout']){
       const reactions=C.resolve({...event,type},players);assert.equal(reactions.length,1);assert.equal(reactions[0].team,team);
       if(type==='guide:used')assert.ok(reactions[0].effects.some(e=>e.type==='guide-cue'));
-      if(type==='iron:clash'){assert.match(reactions[0].line,/파쇄/);assert.ok(reactions[0].effects.some(e=>e.type==='shout'));}
+      if(type==='iron:clash'){assert.equal(reactions[0].line,'금강불괴도 튕기쥬?');assert.ok(reactions[0].effects.some(e=>e.type==='shout'));}
     }
     assert.deepEqual([1,2,3].map(count=>C.resolve({...event,type:'shot:combo-hit',count},players)[0].line),['하나 나갔쥬?','또 나갔쥬?','계속 나가쥬? 약오르쥬!']);
     assert.deepEqual(C.resolve({...event,type:'shot:multi-knockout'},players),[]);
