@@ -17,7 +17,7 @@
     if(!rules.spin&&(shot.side||shot.follow))throw Error('RULE_DISABLED');
     if(!rules.iron)sim.forEach(s=>s.iron=false);
     if(guideName!==null&&(!rules.guides||typeof guideName!=='string'))throw Error('RULE_DISABLED');
-    const events=[],frames=[],team=shooter.team,contacts=new Set(),knockouts=[];
+    const events=[],frames=[],team=shooter.team,contacts=new Set(),knockouts=[],struck=new Set();
     const cue=guideName===null?null:{id:`${id}:guide`,team,name:guideName,duration:1.35,remaining:1.35};
     const add=(type,tick,data={})=>events.push({id:`${id}:${events.length}`,sequence:events.length,type,tick,time:tick<0?-1.35:tick*DT,actorTeam:team,targetTeam:1-team,...data});
     if(cue)add('guide:used',-1,{team:cue.team,name:cue.name,duration:cue.duration,remaining:cue.remaining,cueId:cue.id});
@@ -42,6 +42,10 @@
         (a,b,contact={})=>{
           contacts.add(a.id);if(b)contacts.add(b.id);
           add(b?'stone:collision':'obstacle:collision',tick,{stones:b?[a.id,b.id]:[a.id],x:a.x,y:a.y});
+          if(b)for(const target of [a,b])if(target.team!==team&&!struck.has(target.id)){
+            struck.add(target.id);
+            add('shot:combo-hit',tick,{stone:target.id,team,count:struck.size,x:target.x,y:target.y});
+          }
           if(contact.ironBlock||contact.ironClash){
             const attacker=sim.find(s=>s.id===contact.attacker),defender=sim.find(s=>s.id===contact.defender);
             const clash=!!contact.ironClash;
@@ -54,8 +58,14 @@
     }
     const capped=P.moving(sim);
     if(capped){sim.forEach(s=>{s.vx=0;s.vy=0;s.spinPower=0;s.spinSide=0;s.spinFollow=0;});frames[tick]=copy(sim);add('shot:limit',tick);}
-    // Classify after planning, but deliver every callout at its own fall tick.
-    if(knockouts.length>=2)for(const event of knockouts)event.type='shot:combo-hit';
+    // Only multi-knockouts earn counts, shown at those stones' first impact ticks.
+    const removed=new Set(knockouts.map(event=>event.stone));
+    let comboCount=0;
+    for(let i=events.length-1;i>=0;i--)if(events[i].type==='shot:combo-hit'&&(removed.size<2||!removed.has(events[i].stone)))events.splice(i,1);
+    events.forEach((event,index)=>{
+      event.sequence=index;event.id=`${id}:${index}`;
+      if(event.type==='shot:combo-hit')event.count=++comboCount;
+    });
     const remaining=[0,1].map(t=>sim.filter(s=>s.alive&&s.team===t).length);
     const fallen=events.filter(e=>e.type==='stone:fall');
     const enemyFalls=fallen.filter(e=>e.team!==team),ownFalls=fallen.filter(e=>e.team===team);

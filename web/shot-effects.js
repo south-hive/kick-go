@@ -37,7 +37,12 @@
       if(!reaction.resumed)cueTone();
     }
     function highlight(reaction,style){
-      if(highlights.length<16)highlights.push({...reaction,style,start:highlights.length?null:now()});
+      if(reaction.presentation==='latest'){
+        // Replace this event's previous tier immediately, even while another shout is queued.
+        for(let i=highlights.length-1;i>=0;i--)if(highlights[i].eventType===reaction.eventType&&highlights[i].team===reaction.team)highlights.splice(i,1);
+        if(highlights[0])highlights[0].start=null;
+        highlights.unshift({...reaction,style,start:now()});
+      }else if(highlights.length<16)highlights.push({...reaction,style,start:highlights.length?null:now()});
     }
     const effects=new Map([
       ['ring',(reaction,effect)=>{const event=reaction.event;if(Number.isFinite(event.x)&&Number.isFinite(event.y))rings.push({x:event.x,y:event.y,start:now(),strong:true,color:effect.color||'#ffe4a0'});}],
@@ -45,7 +50,18 @@
       ['shout',reaction=>highlight(reaction,'shout')],
       ['guide-cue',guideCue],
     ]);
+    let comboUntil=null;
+    function clearCombo(){comboUntil=null;$('shot-combo').replaceChildren();$('shot-combo').hidden=true;}
+    function accumulateCombo(event){
+      const el=$('shot-combo');
+      for(let n=el.children.length+1;n<=Math.min(5,event.count);n++){
+        const chip=root.document.createElement('b');chip.textContent=`${n}타`;el.append(chip);
+      }
+      el.hidden=!el.children.length;
+    }
     function react(reaction){
+      // Silence is explicit in the dialogue data; never discard an entire event type.
+      if(reaction.presentation==='silent')return;
       // Reconnect restores the current guide card, not past speech/sounds/particles.
       const selected=reaction.resumed?reaction.effects.filter(effect=>effect.type==='guide-cue'):reaction.effects;
       if(!reaction.resumed&&reaction.line&&!selected.some(effect=>['caption','shout','guide-cue'].includes(effect.type))){
@@ -53,20 +69,25 @@
       }
       for(const effect of selected)try{effects.get(effect.type)?.(reaction,effect);}catch(error){hooks.emit('effect:error',{error,effect:effect.type});}
     }
-    function reset(){shake=null;arena.style.removeProperty('--combo-glow');delete arena.dataset.combo;rings.length=0;queues.forEach(queue=>queue.length=0);highlights.length=0;highlightKey=null;hideCue();for(const team of [0,1])$('character-reaction-'+team).hidden=true;$('shot-highlight').hidden=true;}
+    function reset(){clearCombo();shake=null;arena.style.removeProperty('--combo-glow');delete arena.dataset.combo;rings.length=0;queues.forEach(queue=>queue.length=0);highlights.length=0;highlightKey=null;hideCue();for(const team of [0,1])$('character-reaction-'+team).hidden=true;$('shot-highlight').hidden=true;}
     const subscriptions=[
       hooks.on('impact',event=>{impact(event);rings.push({x:event.x,y:event.y,start:now(),strong:event.speed>500});}),
       hooks.on('stone:fall',fall),
       hooks.on('shot:combo-hit',event=>{
+        accumulateCombo(event);
         const level=Math.min(5,Math.max(1,event.count));
         shake={start:now(),duration:180+level*55,amplitude:1+level*1.8};
         arena.dataset.combo=String(event.count);
         rings.push({x:event.x,y:event.y,start:now(),strong:true,level,color:level>=3?'#ffae65':'#ffe4a0'});
       }),
-      hooks.on('shot:start',()=>{shake=null;delete arena.dataset.combo;arena.style.removeProperty('--combo-glow');}),
+      hooks.on('shot:end',()=>{if(!$('shot-combo').hidden)comboUntil=now()+900;}),
+      hooks.on('shot:start',()=>{clearCombo();shake=null;delete arena.dataset.combo;arena.style.removeProperty('--combo-glow');}),
       hooks.on('character:reaction',react),
       hooks.on('shot:start',hideCue),
-      hooks.on('shot:resume',state=>{if(!state.cue)hideCue();}),
+      hooks.on('shot:resume',state=>{
+        if(!state.cue)hideCue();clearCombo();
+        if(!state.done)for(const event of state.events)if(event.type==='shot:combo-hit')accumulateCombo(event);
+      }),
       hooks.on('match:start',reset),
       hooks.on('session:ended',reset),
     ];
@@ -74,7 +95,7 @@
       registerEffect(type,handler){const previous=effects.get(type);effects.set(type,handler);return()=>{if(previous)effects.set(type,previous);else effects.delete(type);};},
       pause(paused){
         if(paused&&pausedAt===null)pausedAt=performance.now();
-        else if(!paused&&pausedAt!==null){const elapsed=performance.now()-pausedAt;rings.forEach(r=>r.start+=elapsed);if(shake)shake.start+=elapsed;if(highlights[0])highlights[0].start+=elapsed;for(const queue of queues)if(queue[0]&&queue[0].start!==null)queue[0].start+=elapsed;pausedAt=null;}
+        else if(!paused&&pausedAt!==null){const elapsed=performance.now()-pausedAt;if(comboUntil!==null)comboUntil+=elapsed;rings.forEach(r=>r.start+=elapsed);if(shake)shake.start+=elapsed;if(highlights[0])highlights[0].start+=elapsed;for(const queue of queues)if(queue[0]&&queue[0].start!==null)queue[0].start+=elapsed;pausedAt=null;}
         for(const node of [$('shot-cue'),$('shot-cue').firstElementChild,$('shot-highlight')])node.style.animationPlayState=paused?'paused':'running';
       },
       camera(ctx,time){
@@ -89,6 +110,7 @@
       },
       draw(ctx,time){
         time=pausedAt??time;
+        if(comboUntil!==null&&time>=comboUntil)clearCombo();
         const reduced=root.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
         for(let i=rings.length-1;i>=0;i--){const r=rings[i],age=(time-r.start)/300;if(age>=1){rings.splice(i,1);continue;}if(reduced)continue;
           ctx.save();ctx.globalAlpha=1-age;ctx.strokeStyle=r.color||(r.strong?'#ffe4a0':'#fff4d1');ctx.lineWidth=r.level?3+r.level*2:r.strong?4:2;ctx.beginPath();ctx.arc(r.x,r.y,20+age*(38+(r.level||0)*20),0,Math.PI*2);ctx.stroke();ctx.restore();

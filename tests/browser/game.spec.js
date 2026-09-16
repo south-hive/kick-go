@@ -305,9 +305,8 @@ test('basic character calls shatter, tells the opponent to focus, and queues 1-2
     stones=[[0,0,930,400],[5,1,1072,347],[6,1,1038,427],[7,1,1083,442]].map(([id,team,x,y])=>({id,team,x,y,vx:0,vy:0,alive:true}));
     window.calls=[];alkkagiEffects.on('character:reaction',reaction=>calls.push(reaction.line));launch(stones[0],1360,0);
   });
-  await expect(page.locator('#shot-highlight')).toHaveText('1타');
-  await expect(page.locator('#shot-highlight')).toHaveText('2타');
-  await expect(page.locator('#shot-highlight')).toHaveText('3타');
+  await expect(page.locator('#shot-combo')).toHaveText('1타2타3타');
+  await expect(page.locator('#shot-combo')).toBeHidden();
   expect(await page.evaluate(()=>calls)).toEqual(['1타','2타','3타']);
   expect(errors).toEqual([]);
 });
@@ -347,16 +346,31 @@ test('large dialogue follows the speaker side, wraps inside the board, and combo
   })).toBe(false);
 });
 
-test('meme combo uses escalating taunts with a separate chain count on a narrow board',async({page})=>{
+test('combo hits accumulate immediately, persist during play and clear together',async({page})=>{
   await page.setViewportSize({width:320,height:740});await page.goto('/alkkagi.html');
-  await page.evaluate(()=>{
-    setMode('local');phase='aim';alkkagiCharacters.assign(0,'kurupping');
-    for(const count of [1,2,3])alkkagiEffects.emit('shot:combo-hit',{id:'taunt-'+count,count,actorTeam:0,targetTeam:1,x:1100,y:400});
-  });
-  const el=page.locator('#shot-highlight');
-  for(const [index,line] of ['하나 나갔쥬?','또 나갔쥬?','계속 나가쥬? 약오르쥬!'].entries()){
-    await expect(el).toHaveText(line);await expect(el).toHaveAttribute('data-count',String(index+1));await expect(el).toHaveAttribute('data-position','bottom');
-    const board=await page.locator('.arena').boundingBox(),box=await el.boundingBox();
-    expect(box.x).toBeGreaterThanOrEqual(board.x);expect(box.x+box.width).toBeLessThanOrEqual(board.x+board.width+1);
+  await page.evaluate(()=>{setMode('local');phase='aim';alkkagiCharacters.assign(0,'kurupping');});
+  const el=page.locator('#shot-combo');
+  for(const count of [1,2,3]){
+    await page.evaluate(count=>alkkagiEffects.emit('shot:combo-hit',{id:'hit-'+count,count,actorTeam:0,targetTeam:1,x:1100,y:400}),count);
+    await expect(el).toHaveText(Array.from({length:count},(_,i)=>`${i+1}타`).join(''));
+    await expect(page.locator('#shot-highlight')).toHaveText(['하나 나갔쥬?','또 나갔쥬?','계속 나가쥬? 약오르쥬!'][count-1]);
   }
+  await page.waitForTimeout(1200);await expect(el).toHaveText('1타2타3타');
+  await page.screenshot({path:'test-results/cumulative-combo.png'});
+  await page.evaluate(()=>alkkagiEffects.emit('shot:end',{}));
+  await expect(el).toBeHidden();expect(await el.locator('b').count()).toBe(0);
+  await page.evaluate(()=>{alkkagiEffects.emit('shot:combo-hit',{count:2});alkkagiEffects.emit('shot:start',{});});
+  await expect(el).toBeHidden();
+});
+
+
+test('reconnecting during a shot restores accumulated counts without replaying old hits',async({page})=>{
+  await page.goto('/alkkagi.html');
+  await page.evaluate(()=>{
+    const stream=new AlkkagiShots.RemoteEvents(alkkagiEffects);
+    stream.receive({id:'resume-combo',done:false,events:[1,2].map(count=>({type:'shot:combo-hit',count,sequence:count}))});
+  });
+  await expect(page.locator('#shot-combo')).toHaveText('1타2타');
+  await page.evaluate(()=>alkkagiEffects.emit('shot:resume',{done:true,events:[{type:'shot:combo-hit',count:3}]}));
+  await expect(page.locator('#shot-combo')).toBeHidden();
 });
