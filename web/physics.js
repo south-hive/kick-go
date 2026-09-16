@@ -24,6 +24,8 @@
     const x=Math.max(h.x,Math.min(s.x,h.x+h.w)),y=Math.max(h.y,Math.min(s.y,h.y+h.h));
     let dx=s.x-x,dy=s.y-y,d=Math.hypot(dx,dy),nx,ny,depth;
     if(d>=R)return false;
+    // Every hinge contact forfeits the first-hit attack, including quiet grazes.
+    if(s.ironShot)s.ironShot=false;
     onContact(s,null);
     if(d>0){nx=dx/d;ny=dy/d;depth=R-d;}
     else{const sides=[{d:s.x-h.x,nx:-1,ny:0},{d:h.x+h.w-s.x,nx:1,ny:0},{d:s.y-h.y,nx:0,ny:-1},{d:h.y+h.h-s.y,nx:0,ny:1}].sort((a,b)=>a.d-b.d);nx=sides[0].nx;ny=sides[0].ny;depth=R+sides[0].d;}
@@ -56,6 +58,10 @@
     for(let i=0;i<stones.length;i++)for(let j=i+1;j<stones.length;j++){
       const a=stones[i],b=stones[j];if(!a.alive||!b.alive)continue;
       const dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy);if(d>=R*2)continue;
+      // Capture eligibility for this contact, then consume it before any later pair.
+      const aIronShot=!!a.ironShot,bIronShot=!!b.ironShot;
+      if(a.ironShot)a.ironShot=false;
+      if(b.ironShot)b.ironShot=false;
       onContact(a,b);
       const nx=d?dx/d:1,ny=d?dy/d:0,overlap=(R*2-d)/2+.01;
       const closing=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny;
@@ -64,7 +70,7 @@
         const guard=a.iron?a:b,other=guard===a?b:a,sign=guard===a?1:-1;
         const gx=nx*sign,gy=ny*sign;
         const normal=other.vx*gx+other.vy*gy;
-        if(other.ironShot&&normal<0){
+        if((other===a?aIronShot:bIronShot)&&normal<0){
           // A launched iron stone breaks the other protection; ordinary equal-mass physics follows.
           guard.iron=false;other.ironShot=false;
           contact={ironClash:true,attacker:other.id,defender:guard.id};

@@ -168,3 +168,24 @@ test('the final iron duel transfers momentum and keeps launch provenance private
   assert.equal(r.stones[1].alive,true);assert.ok(r.stones[1].x>437);assert.equal(r.lastShot.result.over,false);
   assert.equal(r.stones[1].iron,false);assert.equal(r.stones[0].iron,false);
 });
+
+test('a hinge rebound spends shatter eligibility before reaching opposing iron',()=>{
+  for(const team of [0,1])for(const reversed of [false,true]){
+    const attacker={id:team*5,team,x:270,y:500,vx:0,vy:0,alive:true,iron:true};
+    const defender={id:(1-team)*5,team:1-team,x:270,y:400,vx:0,vy:0,alive:true,iron:true};
+    const board=reversed?[defender,attacker]:[attacker,defender];
+    const record=Shots.plan(board,{stone:attacker.id,vx:0,vy:650});
+    const cushion=record.events.find(e=>e.type==='obstacle:collision');assert.ok(cushion);
+    assert.equal(record.frames[cushion.tick].find(s=>s.id===attacker.id).ironShot,false);
+    assert.ok(!record.events.some(e=>e.type==='iron:clash'));
+    const block=record.events.find(e=>e.type==='iron:hit');assert.ok(block);assert.ok(block.tick>cushion.tick);
+    const end=record.frames.at(-1).find(s=>s.id===defender.id);
+    assert.equal(end.x,270);assert.equal(end.y,400);assert.equal(end.alive,true);
+    const output=copy(board),playback=new Shots.Playback(record,output);playback.advance(record.duration);
+    for(const viewer of [0,1,null]){
+      const snapshot=playback.snapshot(viewer);
+      assert.ok(snapshot.events.some(e=>e.type==='iron:hit'));
+      assert.ok(!snapshot.events.some(e=>e.type==='iron:clash'));
+    }
+  }
+});

@@ -200,3 +200,26 @@ test('iron-on-iron direct shots match ordinary collision physics, for either ope
     assert.ok(defender.x>437);
   }
 });
+
+test('first contact with any stone consumes shatter eligibility even for glancing or separating contacts',()=>{
+  for(const team of [0,1])for(const reversed of [false,true])for(const velocity of [[500,0],[0,500],[-500,0]]){
+    const attacker={...stone(400,400),id:0,iron:true};
+    const other={...stone(435,400),id:1,team};
+    P.shoot(attacker,...velocity);
+    P.step(reversed?[other,attacker]:[attacker,other],0);
+    assert.equal(attacker.ironShot,false);
+    assert.ok(!other.ironShot); // Eligibility is never transferred to the contacted stone.
+    // The same moving shot subsequently reaches a protected enemy: it must be blocked.
+    Object.assign(attacker,{x:400,y:400,vx:500,vy:0});
+    const guard={...stone(435,400),id:5,team:1,iron:true},contacts=[];
+    P.step([attacker,guard],0,undefined,undefined,(a,b,c)=>contacts.push(c));
+    assert.ok(contacts.some(c=>c?.ironBlock));assert.ok(!contacts.some(c=>c?.ironClash));
+    assert.equal(guard.x,435);assert.equal(guard.vx,0);assert.ok(attacker.vx<0);
+  }
+});
+
+test('quiet hinge contacts also consume eligibility without relying on impact effects',()=>{
+  const attacker={...stone(270,567),iron:true};P.shoot(attacker,0,1);
+  let impacts=0;P.step([attacker],0,()=>impacts++);
+  assert.equal(impacts,0);assert.equal(attacker.ironShot,false);
+});
