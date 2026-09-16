@@ -2,7 +2,7 @@
 const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
-const { randomBytes } = require('node:crypto');
+const { randomBytes, randomInt } = require('node:crypto');
 const { WebSocketServer } = require('ws');
 const { Room, VERSION } = require('./multiplayer');
 const { attachNaval } = require('./naval-server');
@@ -61,7 +61,7 @@ function createGameServer({ automatic = true, firstPlayer } = {}) {
         if (m.type === 'create' || m.type === 'join' || m.type === 'resume' || m.type === 'watch') {
           if (ws.room) throw Error('ALREADY_JOINED');
           let room, team, player;
-          const characterId=(m.type==='create'||m.type==='join')?Characters.get(m.characterId).id:null;
+          const characterId=(m.type==='create'||m.type==='join')?(m.characterId==='random'?Characters.list()[randomInt(Characters.list().length)].id:Characters.get(m.characterId).id):null;
           if (m.type === 'create') {
             if (rooms.size >= 100) throw Error('SERVER_FULL');
             let code; do { code = randomBytes(6).toString('hex').toUpperCase(); } while (rooms.has(code));

@@ -5,6 +5,8 @@
   let activeGame=null,net=null,state=null,navigating=false,rooms=[],directory=null,retry=0,timer,timeout;
   let returning=params.has('return');
   const connections={alkkagi:new OnlineGame(receive,render),naval:new NavalConnection(receive,render)};
+  for(const preset of AlkkagiCharacters.list())$('character').add(new Option(preset.name,preset.id));
+  $('character-hint').textContent=`방을 만들거나 참가할 때 선택합니다. 랜덤은 등록된 ${AlkkagiCharacters.list().length}종 중 하나를 배정합니다.`;
   function nickname(){return $('nickname').value.trim();}
   function saveName(){try{localStorage.setItem('arcade-nickname',nickname());}catch{}}
   try{$('nickname').value=localStorage.getItem('arcade-nickname')||'';}catch{}
@@ -26,7 +28,7 @@
   function enter(game,action,code){
     if(net?.active||net?.session)return;
     saveName();activeGame=game;net=connections[game];state=null;returning=false;remember();
-    const options={...(game==='alkkagi'?{ruleset:$('ruleset').value}:{}),lobby:true,nickname:nickname(),title:$('title').value,public:$('visibility').value==='public'};
+    const options={...(game==='alkkagi'?{ruleset:$('ruleset').value,characterId:$('character').value}:{}),lobby:true,nickname:nickname(),title:$('title').value,public:$('visibility').value==='public'};
     if(game==='alkkagi')net.begin(action,code,options);else net.begin(action,code,nickname(),options);
     render();
   }
@@ -36,7 +38,7 @@
     if(net&&!net.session&&!net.state)state=null;
     const joined=!!net?.session,busy=!!net?.active||joined;
     $('browse').hidden=joined;$('waiting').hidden=!joined;
-    $('nickname').disabled=busy;$('save-name').disabled=busy;
+    $('character').disabled=busy;$('nickname').disabled=busy;$('save-name').disabled=busy;
     for(const id of ['create','join','watch-code'])$(id).disabled=busy;
     if(!net){say('닉네임을 정하고 방을 만들거나 참가하세요.');return;}
     if(!state){say(net.message||'방에 연결하고 있습니다…');return;}
@@ -46,7 +48,7 @@
     $('players').replaceChildren(...state.names.map((name,i)=>{
       const el=document.createElement('div');el.className='player-seat';
       const strong=document.createElement('strong');strong.textContent=`${i===0?'방장 · ':''}${name}${team===i?' (나)':''}`;
-      const span=document.createElement('span');span.textContent=!state.connected[i]?'입장 / 재접속 대기':phase==='lobby'?(state.lobbyReady[i]?'준비 완료':'준비 전'):'접속 중';el.append(strong,span);return el;
+      const span=document.createElement('span');span.textContent=!state.connected[i]?'입장 / 재접속 대기':phase==='lobby'?(state.lobbyReady[i]?'준비 완료':'준비 전'):'접속 중';el.append(strong,span);if(activeGame==='alkkagi'&&state.connected[i]){const character=document.createElement('small');character.textContent=AlkkagiCharacters.get(state.characters[i]).name;el.append(character);}return el;
     }));
     const link=new URL('lobby.html',location.href);link.hash=new URLSearchParams({game:activeGame,code:state.code}).toString();$('invite').value=link.href;$('room-code').textContent=`방 코드 ${state.code}`;
     $('ready').hidden=spectator||!['lobby','over'].includes(phase);

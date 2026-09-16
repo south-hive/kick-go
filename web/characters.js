@@ -8,6 +8,7 @@
     for(const responses of Object.values(preset.responses))for(const [role,response] of Object.entries(responses)){
       if(!['actor','target','other'].includes(role)||!response||
         (response.lines!==undefined&&(!Array.isArray(response.lines)||!response.lines.every(line=>typeof line==='string')))||
+        (response.countLines!==undefined&&(!Array.isArray(response.countLines)||!response.countLines.length||!response.countLines.every(line=>typeof line==='string')))||
         (response.effects!==undefined&&(!Array.isArray(response.effects)||!response.effects.every(effect=>effect&&typeof effect.type==='string')))||
         (response.duration!==undefined&&(!Number.isFinite(response.duration)||response.duration<0||response.duration>10000)))throw Error('INVALID_CHARACTER');
     }
@@ -22,7 +23,7 @@
       const preset=get(player.characterId||'default'),role=team===actor?'actor':team===target?'target':'other';
       const responses=Object.hasOwn(preset.responses,event.type)?preset.responses[event.type]:get().responses[event.type];
       const response=responses?.[role];if(!response)return[];
-      const lines=response.lines||[],key=`${event.id||event.type}:${team}:${preset.id}`;
+      const lines=response.countLines&&Number.isInteger(event.count)&&event.count>0?[response.countLines[Math.min(event.count,response.countLines.length)-1]]:response.lines||[],key=`${event.id||event.type}:${team}:${preset.id}`;
       const values={name:player.name||`${team+1}P`,actor:players[actor]?.name||'',target:players[target]?.name||'',count:event.count??''};
       const line=(lines.length?lines[hash(key)%lines.length]:'').replace(/\{(name|actor|target|count)\}/g,(_,name)=>String(values[name]));
       return[freeze({id:key,eventType:event.type,event,team,role,characterId:preset.id,name:values.name,line,
@@ -50,6 +51,30 @@
     'shot:multi-knockout':{},
     'iron:hit':{actor:{lines:['금강불괴에 막혔어요'],effects:[{type:'ring',color:'#7cf4d8'}]}},
     'iron:clash':{actor:{lines:['파쇄!'],effects:[{type:'shout'},{type:'ring',color:'#ffd16d'}],duration:900}},
+  }});
+  // Game dialogue and the user-requested meme line, not anime quotations.
+  // Research and event mapping: docs/character-dialogue.md.
+  register({id:'naruto',name:'나루토',responses:{
+    'guide:used':{actor:{lines:['좋아, 이번엔 똑바로 노린다니깐!'],effects:[{type:'guide-cue'}]}},
+    'shot:clean-miss':{target:{lines:['어딜 보는 거야! 승부는 여기라니깐!'],effects:[]}},
+    'shot:combo-hit':{actor:{lines:['{count}타'],effects:[{type:'shout'}],duration:650}},
+    'shot:multi-knockout':{},
+    'shot:knockout':{actor:{lines:['좋았어! 이 기세로 간다니깐!'],effects:[]}},
+    'iron:hit':{actor:{lines:['으악, 단단하잖아! 다음엔 뚫는다니깐!'],effects:[{type:'ring',color:'#ff9c42'}]}},
+    'iron:clash':{actor:{lines:['이거 보여주려고 어그로 끌었다!'],effects:[{type:'shout'},{type:'ring',color:'#69cfff'}],duration:1800}},
+  }});
+  // Playful meme persona requested by the user; original situation-specific dialogue.
+  register({id:'kurupping',name:'쿠루삥삥',responses:{
+    'guide:used':{actor:{lines:['겁쟁이 아니쥬? 신중한 거쥬!'],effects:[{type:'guide-cue'}]}},
+    'shot:clean-miss':{target:{lines:['못 때리쥬? 약오르쥬!'],effects:[]}},
+    'shot:combo-hit':{actor:{countLines:['하나 나갔쥬?','또 나갔쥬?','계속 나가쥬? 약오르쥬!','아직도 나가쥬? 쿠쿠루삥뽕!'],effects:[{type:'shout'}],duration:1100}},
+    'shot:multi-knockout':{},
+    'shot:knockout':{actor:{lines:['하나 나갔쥬? 쿠쿠루삥뽕!'],effects:[]}},
+    'iron:hit':{
+      actor:{lines:['앗, 금강불괴였쥬? 이건 몰랐쥬!'],effects:[{type:'ring',color:'#da9bff'}]},
+      target:{lines:['못 뚫쥬? 단단하쥬!'],effects:[]},
+    },
+    'iron:clash':{actor:{lines:['금강불괴도 튕기쥬? 파쇄!'],effects:[{type:'shout'},{type:'ring',color:'#da9bff'}],duration:900}},
   }});
   const api={register,get,resolve,bind,list:()=>[...presets.values()]};
   if(typeof module!=='undefined')module.exports=api;root.AlkkagiCharacters=api;

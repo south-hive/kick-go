@@ -6,10 +6,12 @@ for(const game of ['alkkagi','naval'])test(`${game} public lobby starts only aft
   for(const p of [host,guest,watch])p.on('pageerror',e=>errors.push(e.message));
   try{
     await host.goto('/');await host.locator('#choose-online').click();
+    await expect(host.locator('#ruleset')).toHaveValue('modern');await expect(host.locator('#character')).toHaveValue('random');
     await host.locator('#nickname').fill('친구');await host.locator('#game').selectOption(game);await host.locator('#title').fill('같이 하는 경기');await host.locator('#create').click();
     await expect(host.locator('#waiting')).toBeVisible();await expect(host.locator('#ready')).toBeDisabled();
     const invite=await host.locator('#invite').inputValue(),code=new URLSearchParams(new URL(invite).hash.slice(1)).get('code');
     await guest.goto('/lobby.html');await guest.locator('#nickname').fill('친구');
+    await guest.locator('#character').selectOption('default');
     const row=guest.locator(`.room-card[data-code="${code}"]`);await expect(row).toBeVisible();await row.getByRole('button',{name:'참가',exact:true}).click();
     await expect(guest.locator('#players')).toContainText('친구 (2)');
     await host.locator('#ready').click();await expect(host.locator('#ready')).toHaveText('준비 취소');
@@ -21,6 +23,9 @@ for(const game of ['alkkagi','naval'])test(`${game} public lobby starts only aft
     await expect(host).toHaveURL(new RegExp(file));await expect(guest).toHaveURL(new RegExp(file));
     if(game==='alkkagi'){
       await expect(host.locator('#iron-panel')).toBeVisible();
+      expect(await host.evaluate(()=>net.state.ruleset)).toBe('modern');
+      expect(await host.evaluate(()=>AlkkagiCharacters.list().some(p=>p.id===net.state.characters[0]))).toBe(true);
+      expect(await host.evaluate(()=>net.state.characters[1])).toBe('default');
       await expect(guest.locator('#white-label')).toHaveText('친구 (2)');
     }else await expect(host.locator('#naval-placement')).toBeVisible();
     await watch.goto('/lobby.html');await watch.locator(`.room-card[data-code="${code}"]`).getByRole('button',{name:'관전',exact:true}).click();
@@ -62,9 +67,9 @@ test('classic lobby carries its rule set through readiness, gameplay and reconne
   const [host,guest]=await Promise.all(contexts.map(c=>c.newPage()));
   const errors=[];for(const p of [host,guest])p.on('pageerror',e=>errors.push(e.message));
   try{
-    await host.goto('/lobby.html?game=alkkagi');await host.locator('#ruleset').selectOption('classic');await host.locator('#create').click();
-    await expect(host.locator('#room-game')).toContainText('클래식');const invite=await host.locator('#invite').inputValue();
-    await guest.goto(invite);await guest.locator('#join').click();await expect(guest.locator('#room-game')).toContainText('클래식');
+    await host.goto('/lobby.html?game=alkkagi');await host.locator('#ruleset').selectOption('classic');await host.locator('#character').selectOption('kurupping');await host.locator('#create').click();
+    await expect(host.locator('#room-game')).toContainText('클래식');await expect(host.locator('#players')).toContainText('쿠루삥삥');await expect(host.locator('#character')).toBeDisabled();const invite=await host.locator('#invite').inputValue();
+    await guest.goto(invite);await guest.locator('#character').selectOption('naruto');await guest.locator('#join').click();await expect(guest.locator('#room-game')).toContainText('클래식');await expect(guest.locator('#players')).toContainText('나루토');
     await host.locator('#ready').click();await guest.locator('#ready').click();
     for(const p of [host,guest]){
       await expect(p).toHaveURL(/alkkagi\.html/);await expect(p.locator('#ruleset')).toHaveValue('classic');await expect(p.locator('#ruleset')).toBeDisabled();
@@ -75,6 +80,7 @@ test('classic lobby carries its rule set through readiness, gameplay and reconne
     await expect.poll(()=>host.evaluate(()=>net.state.shotPlayback?.done)).toBe(true);
     const end=await host.evaluate(()=>net.state.stones.map(({x,y,alive})=>({x,y,alive})));
     await guest.reload();await expect(guest.locator('#ruleset')).toHaveValue('classic');
+    await expect.poll(()=>guest.evaluate(()=>net.state?.characters)).toEqual(['kurupping','naruto']);
     await expect.poll(()=>guest.evaluate(()=>net.state?.stones.map(({x,y,alive})=>({x,y,alive})))).toEqual(end);
     expect(errors).toEqual([]);
   }finally{await Promise.all(contexts.map(c=>c.close()));}

@@ -311,3 +311,52 @@ test('basic character calls shatter, tells the opponent to focus, and queues 1-2
   expect(await page.evaluate(()=>calls)).toEqual(['1타','2타','3타']);
   expect(errors).toEqual([]);
 });
+
+test('large dialogue follows the speaker side, wraps inside the board, and combo impact escalates',async({page})=>{
+  await page.goto('/alkkagi.html');
+  await page.evaluate(()=>{
+    setMode('local');phase='aim';alkkagiCharacters.assign(0,'naruto');
+    alkkagiEffects.emit('iron:clash',{id:'large-line',actorTeam:0,targetTeam:1,x:600,y:600});
+  });
+  const shout=page.locator('#shot-highlight');await expect(shout).toHaveText('이거 보여주려고 어그로 끌었다!');await expect(shout).toHaveAttribute('data-position','bottom');
+  const arena=await page.locator('.arena').boundingBox(),box=await shout.boundingBox();
+  expect(box.x).toBeGreaterThanOrEqual(arena.x);expect(box.x+box.width).toBeLessThanOrEqual(arena.x+arena.width+1);
+  expect(await shout.evaluate(e=>parseFloat(getComputedStyle(e).fontSize))).toBeGreaterThanOrEqual(28);
+  await page.locator('.arena').screenshot({path:'test-results/speaker-dialogue-mobile.png'});
+  const result=await page.evaluate(()=>{
+    shotEffects.reset();const before=JSON.stringify(stones),hooks=new AlkkagiShots.Hooks();let flipped=false;
+    const effects=AlkkagiPresentation.install(hooks,{impact:()=>{},fall:()=>{},flipped:()=>flipped});
+    const context=document.createElement('canvas').getContext('2d');
+    hooks.emit('character:reaction',{id:'side',team:1,name:'백돌',line:'못 때리쥬? 약오르쥬!',effects:[],duration:1800});
+    effects.draw(context,performance.now());const top=document.getElementById('character-reaction-1').dataset.position;
+    flipped=true;effects.draw(context,performance.now());const bottom=document.getElementById('character-reaction-1').dataset.position;
+    const strength=[];
+    for(const count of [1,2,3]){
+      hooks.emit('shot:combo-hit',{count,x:600,y:600});const start=performance.now();let max=0;
+      for(let t=10;t<160;t+=10)effects.camera({translate:(x,y)=>max=Math.max(max,Math.hypot(x,y))},start+t);
+      strength.push(max);
+    }
+    effects.reset();const cleared=!document.querySelector('.arena').style.getPropertyValue('--combo-glow');effects.dispose();
+    return {top,bottom,strength,cleared,unchanged:before===JSON.stringify(stones)};
+  });
+  expect(result.top).toBe('top');expect(result.bottom).toBe('bottom');expect(result.strength[1]).toBeGreaterThan(result.strength[0]);expect(result.strength[2]).toBeGreaterThan(result.strength[1]);expect(result.cleared&&result.unchanged).toBe(true);
+  await page.emulateMedia({reducedMotion:'reduce'});
+  expect(await page.evaluate(()=>{
+    const h=new AlkkagiShots.Hooks(),e=AlkkagiPresentation.install(h,{impact:()=>{},fall:()=>{}});let moved=false;
+    h.emit('shot:combo-hit',{count:3,x:600,y:600});e.camera({translate:()=>moved=true},performance.now()+50);e.dispose();return moved;
+  })).toBe(false);
+});
+
+test('meme combo uses escalating taunts with a separate chain count on a narrow board',async({page})=>{
+  await page.setViewportSize({width:320,height:740});await page.goto('/alkkagi.html');
+  await page.evaluate(()=>{
+    setMode('local');phase='aim';alkkagiCharacters.assign(0,'kurupping');
+    for(const count of [1,2,3])alkkagiEffects.emit('shot:combo-hit',{id:'taunt-'+count,count,actorTeam:0,targetTeam:1,x:1100,y:400});
+  });
+  const el=page.locator('#shot-highlight');
+  for(const [index,line] of ['하나 나갔쥬?','또 나갔쥬?','계속 나가쥬? 약오르쥬!'].entries()){
+    await expect(el).toHaveText(line);await expect(el).toHaveAttribute('data-count',String(index+1));await expect(el).toHaveAttribute('data-position','bottom');
+    const board=await page.locator('.arena').boundingBox(),box=await el.boundingBox();
+    expect(box.x).toBeGreaterThanOrEqual(board.x);expect(box.x+box.width).toBeLessThanOrEqual(board.x+board.width+1);
+  }
+});

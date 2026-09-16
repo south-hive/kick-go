@@ -203,6 +203,7 @@ function drawStone(s,alpha=1,scale=1){ctx.save();ctx.globalAlpha=alpha;ctx.trans
 function draw(now){ctx.setTransform(canvas.width/600,0,0,canvas.height/600,0,0);ctx.clearRect(0,0,600,600);
   renderIron();
   $('cancel-aim').disabled=!drag;syncGuides();
+  shotEffects.camera(ctx,now);
   if(flippedView()){ctx.translate(600,600);ctx.rotate(Math.PI);}
   ctx.fillStyle='#0c1512';ctx.fillRect(44,53,514,517);ctx.save();ctx.shadowColor='#0009';ctx.shadowBlur=24;ctx.shadowOffsetY=10;ctx.fillStyle='#9a6a35';ctx.fillRect(43,43,514,514);ctx.restore();ctx.save();ctx.translate(600,0);ctx.rotate(Math.PI/2);ctx.drawImage(wood,0,0);ctx.restore();
   ctx.strokeStyle='#f0c99088';ctx.lineWidth=2;ctx.strokeRect(44,44,512,512);

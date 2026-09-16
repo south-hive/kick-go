@@ -91,3 +91,15 @@ test('invalid character ids cannot create ghost rooms or occupy a guest seat',as
   guest.send({type:'join',code,characterId:'missing'});assert.equal((await guest.next(m=>m.type==='error')).code,'INVALID_CHARACTER');assert.equal(game.rooms.get(code).players[1],null);
   guest.send({type:'join',code,characterId:'default'});await guest.next(m=>m.type==='joined');assert.deepEqual((await guest.next(m=>m.type==='state')).characters,['default','default']);
 });
+
+test('random character is resolved on entry and retained on reconnect',async t=>{
+  const {game,client}=await harness(t),host=await client('/ws'),guest=await client('/ws');
+  host.send({type:'create',lobby:true,characterId:'random'});const identity=await host.next(m=>m.type==='joined');
+  const initial=await host.next(m=>m.type==='state');assert.equal(initial.ruleset,'modern');
+  assert.ok(require('../web/characters').list().some(p=>p.id===initial.characters[0]));assert.notEqual(initial.characters[0],'random');
+  guest.send({type:'join',code:identity.code,characterId:'default'});await guest.next(m=>m.type==='joined');
+  assert.deepEqual((await guest.next(m=>m.type==='state')).characters,[initial.characters[0],'default']);
+  const resumed=await client('/ws');resumed.send({type:'resume',code:identity.code,token:identity.token});await resumed.next(m=>m.type==='joined');
+  assert.deepEqual((await resumed.next(m=>m.type==='state')).characters,[initial.characters[0],'default']);
+  assert.equal(game.rooms.get(identity.code).players[0].characterId,initial.characters[0]);
+});
