@@ -160,3 +160,16 @@ body{min-height:100dvh}
 
 .shot-combo{position:absolute;left:50%;top:48%;transform:translate(-50%,-50%);z-index:8;display:flex;justify-content:center;gap:5px;max-width:94%;padding:6px 8px;border-radius:12px;background:#172a22e8;border:1px solid #ffe29a99;pointer-events:none;white-space:nowrap;box-shadow:0 4px 18px #0005}
 .shot-combo b{font-size:clamp(16px,4vw,28px);line-height:1.3;color:#ffe29a;text-shadow:0 2px #513b20}.shot-combo b:last-child{color:#fff5ce}
+/* Numeric aim shares the strike panel and stays available in classic rules. */
+.app>.spin-panel{display:grid;grid-template-columns:54px minmax(0,1fr);gap:4px 10px;align-content:center;padding:4px 8px}
+.spin-panel>.strike-control{grid-column:1;grid-row:1 / 3;justify-self:center}
+.spin-panel>.strike-info{grid-column:2;display:flex;align-items:center;justify-content:space-between;gap:6px;min-width:0}
+.spin-panel>.strike-info p{display:none}.spin-panel>.strike-info strong{font-size:11px}.spin-panel>.strike-info strong span{display:inline;font-size:10px;margin:0 0 0 4px}.spin-panel>.strike-info button{margin:0;min-height:26px;padding:3px 6px;font-size:10px;white-space:nowrap}
+.numeric-aim{grid-column:2;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.85fr) auto;gap:3px 6px;align-items:end;min-width:0}
+.numeric-aim label{font-size:10px;min-width:0;color:#d4dfcd}.numeric-aim input{display:block;width:100%;min-width:0;height:32px;border:1px solid #8ba18a;border-radius:5px;background:#14271e;color:#fff0cd;padding:4px;font:13px monospace}
+.numeric-aim button{height:32px;padding:4px 10px;white-space:nowrap}.numeric-aim button:disabled{opacity:.4;cursor:default}.numeric-aim small{font-size:9px;color:#b9c7b1;line-height:1.3;grid-column:1 / -1}
+.spin-panel:has(.strike-control[hidden]) .numeric-aim{grid-column:1 / -1}
+@media(orientation:portrait){.app{grid-template-rows:32px 64px 28px minmax(0,1fr) 40px 112px 44px}}
+@media(orientation:landscape) and (min-width:640px){.app{grid-template-rows:32px 64px 28px 24px 40px minmax(106px,1fr) 44px}}
+@media(orientation:landscape) and (min-width:1024px) and (min-height:650px){.app{grid-template-rows:64px 90px 40px 24px 48px minmax(148px,1fr) 48px}.app>.spin-panel{grid-template-columns:80px minmax(0,1fr);gap:8px}#strike-pad{width:76px;height:76px}.numeric-aim input,.numeric-aim button{height:36px}.numeric-aim label,.numeric-aim small{font-size:11px}}
+@media(orientation:landscape) and (max-height:440px){.app{grid-template-areas:'board rules' 'board score' 'board status' 'board iron' 'board cancel' 'board spin' 'board footer';grid-template-rows:30px 50px 20px 14px 30px minmax(92px,1fr) 32px}.app>.spin-panel{grid-template-columns:42px minmax(0,1fr);padding:0 2px;gap:3px 5px}.numeric-aim input,.numeric-aim button{height:28px;font-size:11px}.numeric-aim button{padding:3px 6px}.numeric-aim{gap:2px 4px}.spin-panel>.strike-info strong span{display:none}.spin-panel>.strike-info button{min-height:22px}.app>.power{grid-area:cancel;width:calc(100% - 108px);justify-self:start}.app>.aim-actions{justify-self:end;width:104px}}

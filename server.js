@@ -13,7 +13,7 @@ const Characters = require('./web/characters');
 const files = Object.fromEntries(['lobby.html', 'lobby.css', 'lobby.js', 'index.html', 'battleship.html', 'naval.css', 'naval-model.js', 'naval-client.js', 'naval.js', 'robots.html', 'robots.css', 'robot-model.js', 'robots.js', 'alkkagi.html', 'flight.html', 'style.css', 'arcade.css', 'game.js', 'physics.js', 'online.js', 'config.js', 'hub.js', 'flight-model.js', 'flight.js', 'assets/pywel-panorama.png', 'assets/damiane-sprites-v2.png'].map(f => ['/' + f, f]));
 files['/'] = 'index.html';
 files['/ai.js'] = 'ai.js';
-for (const file of ['rules.js','shot-engine.js','shot-effects.js','naval-reactions.js','character-dialogue.js','characters.js']) files['/'+file]=file;
+for (const file of ['rules.js','aim-input.js','shot-engine.js','shot-effects.js','naval-reactions.js','character-dialogue.js','characters.js']) files['/'+file]=file;
 const types = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.png': 'image/png' };
 
 function createGameServer({ automatic = true, firstPlayer } = {}) {

@@ -9,7 +9,7 @@ async function shoot(page, id) {
   const box = await page.locator('#game').boundingBox();
   const stone = await page.evaluate(id => viewPoint(stones.find(s => s.id === id)), id);
   const x = box.x + stone.x / 1200 * box.width, y = box.y + stone.y / 1200 * box.height;
-  await page.mouse.move(x, y); await page.mouse.down(); await page.mouse.move(x + 12, y, { steps: 3 }); await page.mouse.up();
+  await page.mouse.move(x, y); await page.mouse.down(); await page.mouse.move(x + 12, y, { steps: 3 }); await page.mouse.up(); await page.locator('#kick').click();
 }
 
 test('two browser contexts trade shots, share positions, and resume after reload', async ({ browser }) => {
@@ -75,7 +75,7 @@ test('iron selection, owner marker and ordinary prediction work on mobile and de
     await page.locator('#guide-0').click();
     await page.evaluate(()=>{
       stones=[{id:0,team:0,x:400,y:400,vx:0,vy:0,alive:true,iron:true},{id:5,team:1,x:550,y:410,vx:0,vy:0,alive:true,iron:true}];
-      drag={s:stones[0],start:{x:400,y:400},end:{x:260,y:400},screenX:200,screenY:200};
+      aimStoneId=0;drag={s:stones[0],start:{x:400,y:400},end:{x:260,y:400},screenX:200,screenY:200};
     });
     await expect.poll(()=>page.evaluate(()=>guideCache?.path.collision)).toBe(true);
     expect(await page.evaluate(()=>guideCache.path.branches.length)).toBe(2);
@@ -149,7 +149,7 @@ test('aim cancels with Escape, release on cancel button and a second touch witho
   await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await cdp.detach();
   expect(await page.evaluate(()=>drag)).toBe(null);expect(await page.evaluate(()=>JSON.stringify(stones))).toBe(before);
   expect(await page.evaluate(()=>guideRemaining[0])).toBe(1);await expect(page.locator('#power-number')).toHaveText('0%');
-  await aim();await page.mouse.up();await expect.poll(()=>page.evaluate(()=>guideRemaining[0])).toBe(0);
+  await aim();await page.mouse.up();await page.locator('#kick').click();await expect.poll(()=>page.evaluate(()=>guideRemaining[0])).toBe(0);
 });
 
 test('rematch request is visible on the result overlay and acceptance sends the current match',async({page})=>{
@@ -373,4 +373,36 @@ test('reconnecting during a shot restores accumulated counts without replaying o
   await expect(page.locator('#shot-combo')).toHaveText('1타2타');
   await page.evaluate(()=>alkkagiEffects.emit('shot:resume',{done:true,events:[{type:'shot:combo-hit',count:3}]}));
   await expect(page.locator('#shot-combo')).toBeHidden();
+});
+
+test('numeric aim retains a drag, previews decimal edits and only fires on Kick',async({page})=>{
+  await page.goto('/alkkagi.html');
+  await page.evaluate(()=>{ruleset='classic';setMode('local');turn=0;phase='aim';status();});
+  const box=await page.locator('#game').boundingBox(),s=await page.evaluate(()=>stones[0]);
+  const x=box.x+s.x/1200*box.width,y=box.y+s.y/1200*box.height;
+  await page.mouse.move(x,y);await page.mouse.down();await page.mouse.move(x+20,y);await page.mouse.up();
+  await expect(page.locator('#kick')).toBeEnabled();await expect(page.locator('#aim-angle')).toHaveValue('270');
+  expect(await page.evaluate(()=>phase)).toBe('aim');
+  await page.locator('#aim-angle').fill('12.3456');await page.locator('#aim-power').fill('37.5');
+  await page.evaluate(()=>{window.kicked=null;window.originalLaunch=launch;launch=(s,vx,vy)=>{window.kicked={id:s.id,vx,vy};};});
+  await page.locator('#kick').click();
+  const shot=await page.evaluate(()=>window.kicked);
+  expect(shot.id).toBe(0);expect(Math.atan2(shot.vx,-shot.vy)*180/Math.PI).toBeCloseTo(12.3456,5);
+  expect(Math.hypot(shot.vx,shot.vy)).toBeCloseTo(510,5);
+  await page.locator('#aim-power').fill('');await expect(page.locator('#kick')).toBeDisabled();
+  await page.locator('#aim-power').fill('50');await page.keyboard.press('Escape');await expect(page.locator('#kick')).toBeDisabled();
+});
+
+test('numeric guide updates after selection and controls fit narrow and landscape screens',async({page})=>{
+  for(const viewport of [{width:320,height:740},{width:844,height:390},{width:1366,height:900}]){
+    await page.setViewportSize(viewport);await page.goto('/alkkagi.html');
+    await page.evaluate(()=>{setMode('local');phase='aim';turn=0;aimStoneId=0;guideArmed[0]=true;guides[0]=true;});
+    await page.locator('#aim-angle').fill('10.25');await page.locator('#aim-power').fill('62.5');
+    await expect.poll(()=>page.evaluate(()=>guideCache?.key)).toBeTruthy();
+    const before=await page.evaluate(()=>guideCache.key);await page.locator('#aim-angle').fill('10.26');
+    await expect.poll(()=>page.evaluate(()=>guideCache?.key)).not.toBe(before);
+    for(const id of ['aim-angle','aim-power','kick'])await expect(page.locator('#'+id)).toBeInViewport({ratio:.95});
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+    await page.screenshot({path:`test-results/numeric-aim-${viewport.width}.png`});
+  }
 });
