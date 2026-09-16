@@ -20,6 +20,7 @@ test('two captains and a spectator deploy privately, trade shots, resume and rem
     for(let i=0;i<targets.length;i++){
       await host.locator(`#naval-enemy-board [data-cell="${targets[i]}"]`).click();
       await expect(guest.locator(`#naval-own-board [data-cell="${targets[i]}"]`)).toHaveClass(/hit|sunk/);
+      if(i<3)for(const p of [host,guest,watch])await expect(p.locator('#naval-hit-count')).toHaveText(Array.from({length:i+1},(_,n)=>`${n+1}타`).join(' · '));
       if(i===0){await guest.reload();await expect(guest.locator('#naval-own-board [data-cell="0"]')).toHaveClass(/hit/);await expect(guest.locator('#naval-status')).toContainText('내 차례');}
       if(i===4){await expect(host.locator('#naval-effect')).toContainText('격침');await expect(watch.locator('#naval-enemy-board .ship')).toHaveCount(5);await host.locator('#naval-enemy-board').screenshot({path:'test-results/naval-sunk.png'});}
       if(i<targets.length-1)await guest.locator(`#naval-enemy-board [data-cell="${80+i}"]`).click();
@@ -30,5 +31,26 @@ test('two captains and a spectator deploy privately, trade shots, resume and rem
     await watch.locator('#naval-leave').click();await expect(watch.locator('#naval-lobby')).toBeVisible();await expect(host.locator('#naval-placement')).toBeVisible();
     host.once('dialog',d=>d.accept());await host.locator('#naval-leave').click();await expect(guest.locator('#naval-lobby')).toBeVisible();
     expect(errors).toEqual([]);
+  }finally{await Promise.all(contexts.map(c=>c.close()));}
+});
+
+test('modern sonar survives reload and appears for both captains and spectators',async({browser})=>{
+  const contexts=await Promise.all([0,1,2].map(()=>browser.newContext({baseURL:'http://127.0.0.1:8091'})));
+  const [host,guest,watch]=await Promise.all(contexts.map(c=>c.newPage()));
+  try{
+    await host.goto('/battleship.html');await expect(host.locator('#naval-ruleset')).toHaveValue('modern');await host.locator('#naval-character').selectOption('faker');await host.locator('#naval-create').click();
+    await expect(host.locator('#naval-room-code')).toHaveText(/^[A-F0-9]{12}$/);const code=await host.locator('#naval-room-code').textContent();
+    for(const [page,action] of [[guest,'join'],[watch,'watch']]){await page.goto('/battleship.html');await page.locator('#naval-code').fill(code);await page.locator('#naval-'+action).click();}
+    await deploy(host);await deploy(guest);
+    await host.locator('#naval-enemy-board [data-cell="51"]').click();
+    for(const [page,board] of [[host,'enemy'],[guest,'own'],[watch,'enemy']]){
+      await expect(page.locator(`#naval-${board}-board [data-cell="51"]`)).toHaveText('?');
+      await expect(page.locator('#naval-room-ruleset')).toHaveText('모던');
+      await expect(page.locator('#naval-reaction span')).toHaveText('위치는 파악했습니다.');
+    }
+    await expect(watch.locator('.sea-cell.ship')).toHaveCount(0);
+    await host.reload();await expect(host.locator('#naval-enemy-board [data-cell="51"]')).toHaveText('?');
+    await expect(host.locator('#naval-enemy-board [data-cell="51"]')).toBeDisabled();
+    await expect(host.locator('#naval-reaction')).toBeHidden();
   }finally{await Promise.all(contexts.map(c=>c.close()));}
 });

@@ -58,3 +58,75 @@ test('real sockets support two players, read-only spectator, reconnection and ro
   watcher.send({type:'leave'});await watcher.next(m=>m.type==='ended');assert.equal(game.naval.rooms.size,1);
   host.send({type:'leave'});await replacement.next(m=>m.type==='ended');assert.equal(game.naval.rooms.size,0);
 });
+
+test('sonar scans a centered 3x3 including diagonals without wrapping board edges',()=>{
+  assert.deepEqual(M.scanArea(44),[33,34,35,43,44,45,53,54,55]);
+  assert.deepEqual(M.scanArea(0),[0,1,10,11]);assert.deepEqual(M.scanArea(99),[88,89,98,99]);
+  assert.equal(M.scanArea(9).includes(10),false);
+  const ships=[{id:'destroyer',start:55,vertical:false}];
+  assert.equal(M.sonar(ships,44),true);assert.equal(M.sonar(ships,33),false);
+  assert.throws(()=>M.scanArea(100),/INVALID_SHOT/);
+  assert.throws(()=>new NavalRoom('invalid','bad'),/INVALID_RULESET/);
+});
+test('modern sonar marks only misses and shares boolean hints without exposing live fleets',()=>{
+  const r=new NavalRoom('sonar','modern');for(const t of [0,1])r.seat(t,{readyState:1},'captain');ready(r);
+  r.fire(0,message(r,54)); // diagonal from target destroyer at 45.
+  assert.equal(r.lastShot.result,'miss');assert.equal(r.lastShot.sonar,true);assert.deepEqual(r.lastShot.cells,[]);
+  assert.equal(r.snapshot(0).ownShots[54],1);assert.equal(r.snapshot(0).ownSonar[54],true);
+  assert.equal(r.snapshot(1).incomingSonar[54],true);assert.equal(r.snapshot(null).ownSonar[54],true);
+  assert.deepEqual(r.snapshot(0).opponentShips,[]);assert.deepEqual(r.snapshot(null).ownShips,[]);assert.deepEqual(r.snapshot(null).opponentShips,[]);
+  const copy=r.snapshot(0);copy.ownSonar[54]=false;assert.equal(r.snapshot(0).ownSonar[54],true);
+  r.fire(1,message(r,99));assert.equal(r.lastShot.sonar,false);
+  assert.throws(()=>r.fire(0,message(r,54)),/ALREADY_SHOT/);
+  r.fire(0,message(r,5));assert.equal(r.lastShot.result,'hit');assert.equal(r.lastShot.sonar,false);
+  const token=r.players[0].token;r.resume(token,{readyState:1});assert.equal(r.snapshot(0).ownSonar[54],true);
+  assert.equal(r.snapshot(0).ruleset,'modern');
+});
+test('classic retains misses without sonar, and modern rematch clears hints while keeping rules',()=>{
+  const classic=room();classic.ruleset='classic';ready(classic);classic.fire(0,message(classic,54));assert.equal(classic.lastShot.sonar,false);assert.equal(classic.snapshot(0).ownSonar.some(Boolean),false);
+  const r=new NavalRoom('modern','modern');for(const t of [0,1])r.seat(t,{readyState:1},'captain');ready(r);
+  r.fire(0,message(r,54));r.fire(1,message(r,99));let miss=70;
+  for(const cell of r.players[1].ships.flatMap(M.cells)){r.fire(0,message(r,cell));if(r.phase!=='over')r.fire(1,message(r,miss++));}
+  r.rematch(0,{match:1});r.rematch(1,{match:1});assert.equal(r.ruleset,'modern');assert.equal(r.snapshot(0).ownSonar.some(Boolean),false);assert.deepEqual(r.snapshot(0).hitStreaks,[0,0]);assert.equal(r.lastShot,null);
+});
+test('sonar keeps the defined presence signal for previously hit and sunk ships',()=>{
+  const r=new NavalRoom('sunk-sonar','modern');for(const t of [0,1])r.seat(t,{readyState:1},'captain');ready(r);
+  for(const cell of [45,46]){r.fire(0,message(r,cell));r.fire(1,message(r,90+cell-45));}
+  assert.equal(r.players[0].shots[45],3);r.fire(0,message(r,54));assert.equal(r.lastShot.sonar,true);
+});
+test('socket creation validates and publishes naval rules in lobby listings',async t=>{
+  const {game,connect}=await harness(t),host=await connect();
+  host.send({type:'create',ruleset:'unknown'});assert.equal((await host.next(m=>m.type==='error')).code,'INVALID_RULESET');assert.equal(game.naval.rooms.size,0);
+  host.send({type:'create',ruleset:'modern',lobby:true,public:true});await host.next(m=>m.type==='joined');
+  assert.equal((await host.next(m=>m.type==='state')).ruleset,'modern');assert.equal(game.lobby.listing()[0].ruleset,'modern');
+});
+
+test('modern is the default and character identity survives reconnect and rematch',()=>{
+  const r=new NavalRoom('default-modern');assert.equal(r.ruleset,'modern');assert.equal(M.rules().sonar,true);
+  assert.throws(()=>r.seat(0,{readyState:1},'A','missing'),/INVALID_CHARACTER/);assert.equal(r.players[0],null);
+  const a=r.seat(0,{readyState:1},'A','faker');r.seat(1,{readyState:1},'B','kurupping');ready(r);
+  assert.deepEqual(r.snapshot(null).characters,['faker','kurupping']);r.resume(a.token,{readyState:1});assert.equal(r.players[0].characterId,'faker');
+  let miss=70;for(const cell of r.players[1].ships.flatMap(M.cells)){r.fire(0,message(r,cell));if(r.phase!=='over')r.fire(1,message(r,miss++));}
+  r.rematch(0,{match:1});r.rematch(1,{match:1});assert.equal(r.ruleset,'modern');assert.deepEqual(r.snapshot(1).characters,['faker','kurupping']);
+});
+test('naval sockets reject invalid characters before creating rooms and resolve random only once',async t=>{
+  const {game,connect}=await harness(t),host=await connect();
+  host.send({type:'create',characterId:'invalid'});assert.equal((await host.next(m=>m.type==='error')).code,'INVALID_CHARACTER');assert.equal(game.naval.rooms.size,0);
+  host.send({type:'create',characterId:'faker'});const h=await host.next(m=>m.type==='joined');assert.equal((await host.next(m=>m.type==='state')).characters[0],'faker');
+  const guest=await connect();guest.send({type:'join',code:h.code,characterId:'invalid'});assert.equal((await guest.next(m=>m.type==='error')).code,'INVALID_CHARACTER');assert.equal(game.naval.rooms.get(h.code).players[1],null);
+  guest.send({type:'join',code:h.code,characterId:'random'});await guest.next(m=>m.type==='joined');const state=await guest.next(m=>m.type==='state');
+  assert.ok(require('../web/characters').list().some(c=>c.id===state.characters[1]));assert.equal(state.ruleset,'modern');
+});
+
+test('hit streaks belong to each captain, include sinking, reset on sonar misses and survive resume',()=>{
+  const r=room();ready(r);
+  r.fire(0,message(r,45));assert.equal(r.lastShot.streak,1);
+  r.fire(1,message(r,0));assert.deepEqual(r.snapshot(null).hitStreaks,[1,1]);
+  r.fire(0,message(r,46));assert.equal(r.lastShot.result,'sunk');assert.equal(r.lastShot.streak,2);
+  r.fire(1,message(r,1));assert.deepEqual(r.snapshot(0).hitStreaks,[2,2]);
+  assert.throws(()=>r.fire(0,message(r,46)),/ALREADY_SHOT/);assert.equal(r.players[0].hitStreak,2);
+  r.resume(r.players[0].token,{readyState:1});assert.deepEqual(r.snapshot(0).hitStreaks,[2,2]);
+  r.fire(0,message(r,54));assert.equal(r.lastShot.sonar,true);assert.equal(r.lastShot.streak,0);assert.deepEqual(r.snapshot(1).hitStreaks,[0,2]);
+  r.fire(1,message(r,99));assert.deepEqual(r.snapshot(null).hitStreaks,[0,0]);
+  r.fire(0,message(r,5));assert.equal(r.lastShot.streak,1);
+});

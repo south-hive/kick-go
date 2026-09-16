@@ -48,5 +48,5 @@
   const catalog=typeof module!=='undefined'?require('./character-dialogue'):root.AlkkagiDialogue;
   for(const preset of catalog.presets)register(preset);
   const api={register,get,resolve,bind,list:()=>[...presets.values()]};
-  if(typeof module!=='undefined')module.exports=api;root.AlkkagiCharacters=api;
+  if(typeof module!=='undefined')module.exports=api;root.AlkkagiCharacters=api;root.GameCharacters=api;
 })(typeof globalThis!=='undefined'?globalThis:this);

@@ -1,0 +1,2147 @@
+{
+  "baseSeed": 20260916,
+  "rng": "mulberry32",
+  "gamesPerRuleset": 100,
+  "turnLimit": 100,
+  "conditions": "Same AI both sides; alternating first team; random iron; no spin or guide usage; 120Hz observations; no character/stat differences",
+  "results": [
+    {
+      "ruleset": "classic",
+      "games": 100,
+      "firstWins": 83,
+      "secondWins": 17,
+      "draws": 0,
+      "turnLimits": 0,
+      "team0Wins": 55,
+      "team1Wins": 45,
+      "meanTurns": 5.55,
+      "maxTurns": 8,
+      "cappedShots": 0,
+      "firstWinWilson95": [
+        0.7445181876635703,
+        0.8910652394022684
+      ],
+      "records": [
+        {
+          "game": 0,
+          "first": 0,
+          "ironIds": [],
+          "winner": 0,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 1,
+          "first": 1,
+          "ironIds": [],
+          "winner": 0,
+          "status": "win",
+          "turns": 6,
+          "cappedShots": 0
+        },
+        {
+          "game": 2,
+          "first": 0,
+          "ironIds": [],
+          "winner": 0,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 3,
+          "first": 1,
+          "ironIds": [],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 4,
+          "first": 0,
+          "ironIds": [],
+          "winner": 0,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 5,
+          "first": 1,
+          "ironIds": [],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 6,
+          "first": 0,
+          "ironIds": [],
+          "winner": 0,
+          "status": "win",
+          "turns": 7,
+          "cappedShots": 0
+        },
+        {
+          "game": 7,
+          "first": 1,
+          "ironIds": [],
+          "winner": 1,
+          "status": "win",
+          "turns": 7,
+          "cappedShots": 0
+        },
+        {
+          "game": 8,
+          "first": 0,
+          "ironIds": [],
+          "winner": 1,
+          "status": "win",
+          "turns": 6,
+          "cappedShots": 0
+        },
+        {
+          "game": 9,
+          "first": 1,
+          "ironIds": [],
+          "winner": 1,
+          "status": "win",
+          "turns": 7,
+          "cappedShots": 0
+        },
+        {
+          "game": 10,
+          "first": 0,
+          "ironIds": [],
+          "winner": 0,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 11,
+          "first": 1,
+          "ironIds": [],
+          "winner": 0,
+          "status": "win",
+          "turns": 6,
+          "cappedShots": 0
+        },
+        {
+          "game": 12,
+          "first": 0,
+          "ironIds": [],
+          "winner": 0,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 13,
+          "first": 1,
+          "ironIds": [],
+          "winner": 0,
+          "status": "win",
+          "turns": 6,
+          "cappedShots": 0
+        },
+        {
+          "game": 14,
+          "first": 0,
+          "ironIds": [],
+          "winner": 0,
+          "status": "win",
+          "turns": 7,
+          "cappedShots": 0
+        },
+        {
+          "game": 15,
+          "first": 1,
+          "ironIds": [],
+          "winner": 1,
+          "status": "win",
+          "turns": 7,
+          "cappedShots": 0
+        },
+        {
+          "game": 16,
+          "first": 0,
+          "ironIds": [],
+          "winner": 0,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 17,
+          "first": 1,
+          "ironIds": [],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 18,
+          "first": 0,
+          "ironIds": [],
+          "winner": 0,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 19,
+          "first": 1,
+          "ironIds": [],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 20,
+          "first": 0,
+          "ironIds": [],
+          "winner": 0,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 21,
+          "first": 1,
+          "ironIds": [],
+          "winner": 0,
+          "status": "win",
+          "turns": 6,
+          "cappedShots": 0
+        },
+        {
+          "game": 22,
+          "first": 0,
+          "ironIds": [],
+          "winner": 0,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 23,
+          "first": 1,
+          "ironIds": [],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 24,
+          "first": 0,
+          "ironIds": [],
+          "winner": 0,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 25,
+          "first": 1,
+          "ironIds": [],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 26,
+          "first": 0,
+          "ironIds": [],
+          "winner": 0,
+          "status": "win",
+          "turns": 7,
+          "cappedShots": 0
+        },
+        {
+          "game": 27,
+          "first": 1,
+          "ironIds": [],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 28,
+          "first": 0,
+          "ironIds": [],
+          "winner": 0,
+          "status": "win",
+          "turns": 7,
+          "cappedShots": 0
+        },
+        {
+          "game": 29,
+          "first": 1,
+          "ironIds": [],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 30,
+          "first": 0,
+          "ironIds": [],
+          "winner": 0,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 31,
+          "first": 1,
+          "ironIds": [],
+          "winner": 0,
+          "status": "win",
+          "turns": 6,
+          "cappedShots": 0
+        },
+        {
+          "game": 32,
+          "first": 0,
+          "ironIds": [],
+          "winner": 0,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 33,
+          "first": 1,
+          "ironIds": [],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 34,
+          "first": 0,
+          "ironIds": [],
+          "winner": 0,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 35,
+          "first": 1,
+          "ironIds": [],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 36,
+          "first": 0,
+          "ironIds": [],
+          "winner": 1,
+          "status": "win",
+          "turns": 6,
+          "cappedShots": 0
+        },
+        {
+          "game": 37,
+          "first": 1,
+          "ironIds": [],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 38,
+          "first": 0,
+          "ironIds": [],
+          "winner": 1,
+          "status": "win",
+          "turns": 6,
+          "cappedShots": 0
+        },
+        {
+          "game": 39,
+          "first": 1,
+          "ironIds": [],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 40,
+          "first": 0,
+          "ironIds": [],
+          "winner": 0,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 41,
+          "first": 1,
+          "ironIds": [],
+          "winner": 0,
+          "status": "win",
+          "turns": 6,
+          "cappedShots": 0
+        },
+        {
+          "game": 42,
+          "first": 0,
+          "ironIds": [],
+          "winner": 0,
+          "status": "win",
+          "turns": 7,
+          "cappedShots": 0
+        },
+        {
+          "game": 43,
+          "first": 1,
+          "ironIds": [],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 44,
+          "first": 0,
+          "ironIds": [],
+          "winner": 1,
+          "status": "win",
+          "turns": 6,
+          "cappedShots": 0
+        },
+        {
+          "game": 45,
+          "first": 1,
+          "ironIds": [],
+          "winner": 1,
+          "status": "win",
+          "turns": 7,
+          "cappedShots": 0
+        },
+        {
+          "game": 46,
+          "first": 0,
+          "ironIds": [],
+          "winner": 0,
+          "status": "win",
+          "turns": 7,
+          "cappedShots": 0
+        },
+        {
+          "game": 47,
+          "first": 1,
+          "ironIds": [],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 48,
+          "first": 0,
+          "ironIds": [],
+          "winner": 0,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 49,
+          "first": 1,
+          "ironIds": [],
+          "winner": 1,
+          "status": "win",
+          "turns": 7,
+          "cappedShots": 0
+        },
+        {
+          "game": 50,
+          "first": 0,
+          "ironIds": [],
+          "winner": 0,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 51,
+          "first": 1,
+          "ironIds": [],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 52,
+          "first": 0,
+          "ironIds": [],
+          "winner": 0,
+          "status": "win",
+          "turns": 7,
+          "cappedShots": 0
+        },
+        {
+          "game": 53,
+          "first": 1,
+          "ironIds": [],
+          "winner": 1,
+          "status": "win",
+          "turns": 7,
+          "cappedShots": 0
+        },
+        {
+          "game": 54,
+          "first": 0,
+          "ironIds": [],
+          "winner": 0,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 55,
+          "first": 1,
+          "ironIds": [],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 56,
+          "first": 0,
+          "ironIds": [],
+          "winner": 0,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 57,
+          "first": 1,
+          "ironIds": [],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 58,
+          "first": 0,
+          "ironIds": [],
+          "winner": 0,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 59,
+          "first": 1,
+          "ironIds": [],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 60,
+          "first": 0,
+          "ironIds": [],
+          "winner": 0,
+          "status": "win",
+          "turns": 7,
+          "cappedShots": 0
+        },
+        {
+          "game": 61,
+          "first": 1,
+          "ironIds": [],
+          "winner": 0,
+          "status": "win",
+          "turns": 4,
+          "cappedShots": 0
+        },
+        {
+          "game": 62,
+          "first": 0,
+          "ironIds": [],
+          "winner": 0,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 63,
+          "first": 1,
+          "ironIds": [],
+          "winner": 1,
+          "status": "win",
+          "turns": 7,
+          "cappedShots": 0
+        },
+        {
+          "game": 64,
+          "first": 0,
+          "ironIds": [],
+          "winner": 0,
+          "status": "win",
+          "turns": 7,
+          "cappedShots": 0
+        },
+        {
+          "game": 65,
+          "first": 1,
+          "ironIds": [],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 66,
+          "first": 0,
+          "ironIds": [],
+          "winner": 0,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 67,
+          "first": 1,
+          "ironIds": [],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 68,
+          "first": 0,
+          "ironIds": [],
+          "winner": 0,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 69,
+          "first": 1,
+          "ironIds": [],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 70,
+          "first": 0,
+          "ironIds": [],
+          "winner": 0,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 71,
+          "first": 1,
+          "ironIds": [],
+          "winner": 0,
+          "status": "win",
+          "turns": 6,
+          "cappedShots": 0
+        },
+        {
+          "game": 72,
+          "first": 0,
+          "ironIds": [],
+          "winner": 1,
+          "status": "win",
+          "turns": 4,
+          "cappedShots": 0
+        },
+        {
+          "game": 73,
+          "first": 1,
+          "ironIds": [],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 74,
+          "first": 0,
+          "ironIds": [],
+          "winner": 0,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 75,
+          "first": 1,
+          "ironIds": [],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 76,
+          "first": 0,
+          "ironIds": [],
+          "winner": 0,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 77,
+          "first": 1,
+          "ironIds": [],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 78,
+          "first": 0,
+          "ironIds": [],
+          "winner": 0,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 79,
+          "first": 1,
+          "ironIds": [],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 80,
+          "first": 0,
+          "ironIds": [],
+          "winner": 0,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 81,
+          "first": 1,
+          "ironIds": [],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 82,
+          "first": 0,
+          "ironIds": [],
+          "winner": 0,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 83,
+          "first": 1,
+          "ironIds": [],
+          "winner": 0,
+          "status": "win",
+          "turns": 6,
+          "cappedShots": 0
+        },
+        {
+          "game": 84,
+          "first": 0,
+          "ironIds": [],
+          "winner": 1,
+          "status": "win",
+          "turns": 8,
+          "cappedShots": 0
+        },
+        {
+          "game": 85,
+          "first": 1,
+          "ironIds": [],
+          "winner": 0,
+          "status": "win",
+          "turns": 6,
+          "cappedShots": 0
+        },
+        {
+          "game": 86,
+          "first": 0,
+          "ironIds": [],
+          "winner": 0,
+          "status": "win",
+          "turns": 7,
+          "cappedShots": 0
+        },
+        {
+          "game": 87,
+          "first": 1,
+          "ironIds": [],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 88,
+          "first": 0,
+          "ironIds": [],
+          "winner": 0,
+          "status": "win",
+          "turns": 7,
+          "cappedShots": 0
+        },
+        {
+          "game": 89,
+          "first": 1,
+          "ironIds": [],
+          "winner": 1,
+          "status": "win",
+          "turns": 7,
+          "cappedShots": 0
+        },
+        {
+          "game": 90,
+          "first": 0,
+          "ironIds": [],
+          "winner": 0,
+          "status": "win",
+          "turns": 7,
+          "cappedShots": 0
+        },
+        {
+          "game": 91,
+          "first": 1,
+          "ironIds": [],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 92,
+          "first": 0,
+          "ironIds": [],
+          "winner": 0,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 93,
+          "first": 1,
+          "ironIds": [],
+          "winner": 0,
+          "status": "win",
+          "turns": 4,
+          "cappedShots": 0
+        },
+        {
+          "game": 94,
+          "first": 0,
+          "ironIds": [],
+          "winner": 0,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 95,
+          "first": 1,
+          "ironIds": [],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 96,
+          "first": 0,
+          "ironIds": [],
+          "winner": 0,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 97,
+          "first": 1,
+          "ironIds": [],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 98,
+          "first": 0,
+          "ironIds": [],
+          "winner": 0,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 99,
+          "first": 1,
+          "ironIds": [],
+          "winner": 1,
+          "status": "win",
+          "turns": 7,
+          "cappedShots": 0
+        }
+      ]
+    },
+    {
+      "ruleset": "modern",
+      "games": 100,
+      "firstWins": 71,
+      "secondWins": 29,
+      "draws": 0,
+      "turnLimits": 0,
+      "team0Wins": 47,
+      "team1Wins": 53,
+      "meanTurns": 5.4,
+      "maxTurns": 9,
+      "cappedShots": 0,
+      "firstWinWilson95": [
+        0.6146092505999207,
+        0.7898529302601586
+      ],
+      "records": [
+        {
+          "game": 0,
+          "first": 0,
+          "ironIds": [
+            3,
+            8
+          ],
+          "winner": 1,
+          "status": "win",
+          "turns": 4,
+          "cappedShots": 0
+        },
+        {
+          "game": 1,
+          "first": 1,
+          "ironIds": [
+            1,
+            9
+          ],
+          "winner": 0,
+          "status": "win",
+          "turns": 4,
+          "cappedShots": 0
+        },
+        {
+          "game": 2,
+          "first": 0,
+          "ironIds": [
+            0,
+            5
+          ],
+          "winner": 0,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 3,
+          "first": 1,
+          "ironIds": [
+            4,
+            6
+          ],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 4,
+          "first": 0,
+          "ironIds": [
+            2,
+            7
+          ],
+          "winner": 0,
+          "status": "win",
+          "turns": 7,
+          "cappedShots": 0
+        },
+        {
+          "game": 5,
+          "first": 1,
+          "ironIds": [
+            2,
+            7
+          ],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 6,
+          "first": 0,
+          "ironIds": [
+            4,
+            6
+          ],
+          "winner": 1,
+          "status": "win",
+          "turns": 4,
+          "cappedShots": 0
+        },
+        {
+          "game": 7,
+          "first": 1,
+          "ironIds": [
+            3,
+            7
+          ],
+          "winner": 0,
+          "status": "win",
+          "turns": 6,
+          "cappedShots": 0
+        },
+        {
+          "game": 8,
+          "first": 0,
+          "ironIds": [
+            4,
+            8
+          ],
+          "winner": 1,
+          "status": "win",
+          "turns": 6,
+          "cappedShots": 0
+        },
+        {
+          "game": 9,
+          "first": 1,
+          "ironIds": [
+            1,
+            6
+          ],
+          "winner": 0,
+          "status": "win",
+          "turns": 4,
+          "cappedShots": 0
+        },
+        {
+          "game": 10,
+          "first": 0,
+          "ironIds": [
+            1,
+            8
+          ],
+          "winner": 0,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 11,
+          "first": 1,
+          "ironIds": [
+            1,
+            8
+          ],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 12,
+          "first": 0,
+          "ironIds": [
+            3,
+            6
+          ],
+          "winner": 0,
+          "status": "win",
+          "turns": 7,
+          "cappedShots": 0
+        },
+        {
+          "game": 13,
+          "first": 1,
+          "ironIds": [
+            3,
+            9
+          ],
+          "winner": 0,
+          "status": "win",
+          "turns": 6,
+          "cappedShots": 0
+        },
+        {
+          "game": 14,
+          "first": 0,
+          "ironIds": [
+            2,
+            7
+          ],
+          "winner": 0,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 15,
+          "first": 1,
+          "ironIds": [
+            0,
+            7
+          ],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 16,
+          "first": 0,
+          "ironIds": [
+            2,
+            7
+          ],
+          "winner": 0,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 17,
+          "first": 1,
+          "ironIds": [
+            3,
+            6
+          ],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 18,
+          "first": 0,
+          "ironIds": [
+            2,
+            8
+          ],
+          "winner": 1,
+          "status": "win",
+          "turns": 6,
+          "cappedShots": 0
+        },
+        {
+          "game": 19,
+          "first": 1,
+          "ironIds": [
+            3,
+            5
+          ],
+          "winner": 0,
+          "status": "win",
+          "turns": 6,
+          "cappedShots": 0
+        },
+        {
+          "game": 20,
+          "first": 0,
+          "ironIds": [
+            1,
+            9
+          ],
+          "winner": 0,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 21,
+          "first": 1,
+          "ironIds": [
+            0,
+            8
+          ],
+          "winner": 1,
+          "status": "win",
+          "turns": 7,
+          "cappedShots": 0
+        },
+        {
+          "game": 22,
+          "first": 0,
+          "ironIds": [
+            3,
+            9
+          ],
+          "winner": 0,
+          "status": "win",
+          "turns": 7,
+          "cappedShots": 0
+        },
+        {
+          "game": 23,
+          "first": 1,
+          "ironIds": [
+            1,
+            9
+          ],
+          "winner": 0,
+          "status": "win",
+          "turns": 4,
+          "cappedShots": 0
+        },
+        {
+          "game": 24,
+          "first": 0,
+          "ironIds": [
+            1,
+            5
+          ],
+          "winner": 0,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 25,
+          "first": 1,
+          "ironIds": [
+            1,
+            8
+          ],
+          "winner": 1,
+          "status": "win",
+          "turns": 7,
+          "cappedShots": 0
+        },
+        {
+          "game": 26,
+          "first": 0,
+          "ironIds": [
+            3,
+            6
+          ],
+          "winner": 0,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 27,
+          "first": 1,
+          "ironIds": [
+            1,
+            8
+          ],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 28,
+          "first": 0,
+          "ironIds": [
+            3,
+            8
+          ],
+          "winner": 1,
+          "status": "win",
+          "turns": 6,
+          "cappedShots": 0
+        },
+        {
+          "game": 29,
+          "first": 1,
+          "ironIds": [
+            4,
+            5
+          ],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 30,
+          "first": 0,
+          "ironIds": [
+            4,
+            5
+          ],
+          "winner": 0,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 31,
+          "first": 1,
+          "ironIds": [
+            2,
+            7
+          ],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 32,
+          "first": 0,
+          "ironIds": [
+            0,
+            7
+          ],
+          "winner": 0,
+          "status": "win",
+          "turns": 4,
+          "cappedShots": 0
+        },
+        {
+          "game": 33,
+          "first": 1,
+          "ironIds": [
+            0,
+            5
+          ],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 34,
+          "first": 0,
+          "ironIds": [
+            3,
+            7
+          ],
+          "winner": 0,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 35,
+          "first": 1,
+          "ironIds": [
+            3,
+            5
+          ],
+          "winner": 0,
+          "status": "win",
+          "turns": 6,
+          "cappedShots": 0
+        },
+        {
+          "game": 36,
+          "first": 0,
+          "ironIds": [
+            4,
+            8
+          ],
+          "winner": 1,
+          "status": "win",
+          "turns": 6,
+          "cappedShots": 0
+        },
+        {
+          "game": 37,
+          "first": 1,
+          "ironIds": [
+            1,
+            5
+          ],
+          "winner": 1,
+          "status": "win",
+          "turns": 7,
+          "cappedShots": 0
+        },
+        {
+          "game": 38,
+          "first": 0,
+          "ironIds": [
+            0,
+            5
+          ],
+          "winner": 0,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 39,
+          "first": 1,
+          "ironIds": [
+            3,
+            5
+          ],
+          "winner": 0,
+          "status": "win",
+          "turns": 6,
+          "cappedShots": 0
+        },
+        {
+          "game": 40,
+          "first": 0,
+          "ironIds": [
+            3,
+            5
+          ],
+          "winner": 0,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 41,
+          "first": 1,
+          "ironIds": [
+            4,
+            9
+          ],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 42,
+          "first": 0,
+          "ironIds": [
+            1,
+            6
+          ],
+          "winner": 1,
+          "status": "win",
+          "turns": 4,
+          "cappedShots": 0
+        },
+        {
+          "game": 43,
+          "first": 1,
+          "ironIds": [
+            0,
+            9
+          ],
+          "winner": 1,
+          "status": "win",
+          "turns": 4,
+          "cappedShots": 0
+        },
+        {
+          "game": 44,
+          "first": 0,
+          "ironIds": [
+            3,
+            7
+          ],
+          "winner": 0,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 45,
+          "first": 1,
+          "ironIds": [
+            4,
+            9
+          ],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 46,
+          "first": 0,
+          "ironIds": [
+            4,
+            6
+          ],
+          "winner": 1,
+          "status": "win",
+          "turns": 4,
+          "cappedShots": 0
+        },
+        {
+          "game": 47,
+          "first": 1,
+          "ironIds": [
+            2,
+            6
+          ],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 48,
+          "first": 0,
+          "ironIds": [
+            1,
+            5
+          ],
+          "winner": 0,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 49,
+          "first": 1,
+          "ironIds": [
+            0,
+            7
+          ],
+          "winner": 1,
+          "status": "win",
+          "turns": 7,
+          "cappedShots": 0
+        },
+        {
+          "game": 50,
+          "first": 0,
+          "ironIds": [
+            0,
+            5
+          ],
+          "winner": 0,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 51,
+          "first": 1,
+          "ironIds": [
+            3,
+            9
+          ],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 52,
+          "first": 0,
+          "ironIds": [
+            1,
+            7
+          ],
+          "winner": 0,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 53,
+          "first": 1,
+          "ironIds": [
+            2,
+            5
+          ],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 54,
+          "first": 0,
+          "ironIds": [
+            1,
+            5
+          ],
+          "winner": 0,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 55,
+          "first": 1,
+          "ironIds": [
+            4,
+            7
+          ],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 56,
+          "first": 0,
+          "ironIds": [
+            0,
+            9
+          ],
+          "winner": 0,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 57,
+          "first": 1,
+          "ironIds": [
+            4,
+            7
+          ],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 58,
+          "first": 0,
+          "ironIds": [
+            0,
+            9
+          ],
+          "winner": 0,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 59,
+          "first": 1,
+          "ironIds": [
+            4,
+            5
+          ],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 60,
+          "first": 0,
+          "ironIds": [
+            3,
+            9
+          ],
+          "winner": 0,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 61,
+          "first": 1,
+          "ironIds": [
+            3,
+            7
+          ],
+          "winner": 0,
+          "status": "win",
+          "turns": 6,
+          "cappedShots": 0
+        },
+        {
+          "game": 62,
+          "first": 0,
+          "ironIds": [
+            0,
+            6
+          ],
+          "winner": 1,
+          "status": "win",
+          "turns": 6,
+          "cappedShots": 0
+        },
+        {
+          "game": 63,
+          "first": 1,
+          "ironIds": [
+            2,
+            9
+          ],
+          "winner": 0,
+          "status": "win",
+          "turns": 6,
+          "cappedShots": 0
+        },
+        {
+          "game": 64,
+          "first": 0,
+          "ironIds": [
+            4,
+            8
+          ],
+          "winner": 1,
+          "status": "win",
+          "turns": 6,
+          "cappedShots": 0
+        },
+        {
+          "game": 65,
+          "first": 1,
+          "ironIds": [
+            0,
+            8
+          ],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 66,
+          "first": 0,
+          "ironIds": [
+            3,
+            9
+          ],
+          "winner": 0,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 67,
+          "first": 1,
+          "ironIds": [
+            0,
+            8
+          ],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 68,
+          "first": 0,
+          "ironIds": [
+            3,
+            7
+          ],
+          "winner": 0,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 69,
+          "first": 1,
+          "ironIds": [
+            0,
+            7
+          ],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 70,
+          "first": 0,
+          "ironIds": [
+            3,
+            7
+          ],
+          "winner": 1,
+          "status": "win",
+          "turns": 6,
+          "cappedShots": 0
+        },
+        {
+          "game": 71,
+          "first": 1,
+          "ironIds": [
+            2,
+            9
+          ],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 72,
+          "first": 0,
+          "ironIds": [
+            2,
+            5
+          ],
+          "winner": 0,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 73,
+          "first": 1,
+          "ironIds": [
+            3,
+            7
+          ],
+          "winner": 0,
+          "status": "win",
+          "turns": 6,
+          "cappedShots": 0
+        },
+        {
+          "game": 74,
+          "first": 0,
+          "ironIds": [
+            3,
+            6
+          ],
+          "winner": 0,
+          "status": "win",
+          "turns": 7,
+          "cappedShots": 0
+        },
+        {
+          "game": 75,
+          "first": 1,
+          "ironIds": [
+            4,
+            6
+          ],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 76,
+          "first": 0,
+          "ironIds": [
+            0,
+            5
+          ],
+          "winner": 1,
+          "status": "win",
+          "turns": 6,
+          "cappedShots": 0
+        },
+        {
+          "game": 77,
+          "first": 1,
+          "ironIds": [
+            2,
+            9
+          ],
+          "winner": 1,
+          "status": "win",
+          "turns": 7,
+          "cappedShots": 0
+        },
+        {
+          "game": 78,
+          "first": 0,
+          "ironIds": [
+            2,
+            5
+          ],
+          "winner": 0,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 79,
+          "first": 1,
+          "ironIds": [
+            3,
+            8
+          ],
+          "winner": 0,
+          "status": "win",
+          "turns": 6,
+          "cappedShots": 0
+        },
+        {
+          "game": 80,
+          "first": 0,
+          "ironIds": [
+            2,
+            6
+          ],
+          "winner": 1,
+          "status": "win",
+          "turns": 6,
+          "cappedShots": 0
+        },
+        {
+          "game": 81,
+          "first": 1,
+          "ironIds": [
+            0,
+            5
+          ],
+          "winner": 0,
+          "status": "win",
+          "turns": 6,
+          "cappedShots": 0
+        },
+        {
+          "game": 82,
+          "first": 0,
+          "ironIds": [
+            2,
+            8
+          ],
+          "winner": 0,
+          "status": "win",
+          "turns": 7,
+          "cappedShots": 0
+        },
+        {
+          "game": 83,
+          "first": 1,
+          "ironIds": [
+            3,
+            6
+          ],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 84,
+          "first": 0,
+          "ironIds": [
+            3,
+            6
+          ],
+          "winner": 1,
+          "status": "win",
+          "turns": 8,
+          "cappedShots": 0
+        },
+        {
+          "game": 85,
+          "first": 1,
+          "ironIds": [
+            2,
+            9
+          ],
+          "winner": 1,
+          "status": "win",
+          "turns": 4,
+          "cappedShots": 0
+        },
+        {
+          "game": 86,
+          "first": 0,
+          "ironIds": [
+            4,
+            5
+          ],
+          "winner": 0,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 87,
+          "first": 1,
+          "ironIds": [
+            3,
+            6
+          ],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 88,
+          "first": 0,
+          "ironIds": [
+            1,
+            8
+          ],
+          "winner": 0,
+          "status": "win",
+          "turns": 9,
+          "cappedShots": 0
+        },
+        {
+          "game": 89,
+          "first": 1,
+          "ironIds": [
+            4,
+            7
+          ],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 90,
+          "first": 0,
+          "ironIds": [
+            1,
+            6
+          ],
+          "winner": 1,
+          "status": "win",
+          "turns": 4,
+          "cappedShots": 0
+        },
+        {
+          "game": 91,
+          "first": 1,
+          "ironIds": [
+            2,
+            6
+          ],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 92,
+          "first": 0,
+          "ironIds": [
+            3,
+            8
+          ],
+          "winner": 0,
+          "status": "win",
+          "turns": 7,
+          "cappedShots": 0
+        },
+        {
+          "game": 93,
+          "first": 1,
+          "ironIds": [
+            0,
+            6
+          ],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 94,
+          "first": 0,
+          "ironIds": [
+            3,
+            5
+          ],
+          "winner": 0,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 95,
+          "first": 1,
+          "ironIds": [
+            0,
+            7
+          ],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 96,
+          "first": 0,
+          "ironIds": [
+            1,
+            7
+          ],
+          "winner": 0,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        },
+        {
+          "game": 97,
+          "first": 1,
+          "ironIds": [
+            2,
+            7
+          ],
+          "winner": 1,
+          "status": "win",
+          "turns": 7,
+          "cappedShots": 0
+        },
+        {
+          "game": 98,
+          "first": 0,
+          "ironIds": [
+            4,
+            8
+          ],
+          "winner": 1,
+          "status": "win",
+          "turns": 6,
+          "cappedShots": 0
+        },
+        {
+          "game": 99,
+          "first": 1,
+          "ironIds": [
+            0,
+            6
+          ],
+          "winner": 1,
+          "status": "win",
+          "turns": 5,
+          "cappedShots": 0
+        }
+      ]
+    }
+  ]
+}
