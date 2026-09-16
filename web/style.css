@@ -74,3 +74,4 @@ header{padding:0 8px}h1{font-size:21px;margin-top:3px}.eyebrow{font-size:8px}
 #game-help .help-guide{padding:14px;border:1px solid #eac78066;background:#eac7800a;border-radius:10px}#game-help strong{color:#ffe2a3}
 #game-help .help-note{font-size:11px;border-top:1px solid #ffffff25;padding-top:14px;margin-top:20px}
 @media(prefers-reduced-motion:reduce){.guide-toggle.guide-ready{animation:none}}
+.guide-toggle b,.guide-toggle small{word-break:keep-all}
