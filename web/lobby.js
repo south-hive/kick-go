@@ -5,30 +5,41 @@
   let activeGame=null,net=null,state=null,navigating=false,rooms=[],directory=null,retry=0,timer,timeout;
   let returning=params.has('return');
   const connections={alkkagi:new OnlineGame(receive,render),naval:new NavalConnection(receive,render)};
-  for(const preset of AlkkagiCharacters.list())$('character').add(new Option(preset.name,preset.id));
-  $('character-hint').textContent=`방을 만들거나 참가할 때 선택합니다. 랜덤은 등록된 ${AlkkagiCharacters.list().length}종 중 하나를 배정합니다.`;
-  function nickname(){return $('nickname').value.trim();}
-  function saveName(){try{localStorage.setItem('arcade-nickname',nickname());}catch{}}
-  try{$('nickname').value=localStorage.getItem('arcade-nickname')||'';}catch{}
+  const mobile=matchMedia('(max-width: 700px)');
+  const character=$('character');
+  for(const preset of AlkkagiCharacters.list())character.add(new Option(preset.name,preset.id));
+  function nickname(){return mobile.matches?'익명':$('nickname').value.trim()||'익명';}
+  function saveName(){try{localStorage.setItem('arcade-nickname',$('nickname').value.trim());}catch{}}
+  try{
+    $('nickname').value=localStorage.getItem('arcade-nickname')||'';
+    const saved=localStorage.getItem('arcade-character');
+    if([...character.options].some(option=>option.value===saved))character.value=saved;
+  }catch{}
+  $('nickname').oninput=saveName;
+  character.onchange=()=>{try{localStorage.setItem('arcade-character',character.value);}catch{}};
   const selected=gameName[params.get('game')]?params.get('game'):'alkkagi';
   $('game').value=selected;$('join-game').value=selected;
   if(Object.hasOwn(AlkkagiRules.sets,params.get('ruleset')))$('ruleset').value=params.get('ruleset');
   const syncRuleset=()=>{$('ruleset-field').hidden=$('game').value!=='alkkagi';};
   $('game').onchange=syncRuleset;syncRuleset();
+  function openDialog(id){document.querySelectorAll('.dialog-status').forEach(el=>el.textContent='');if(!$(id).open)$(id).showModal();}
+  $('open-create').onclick=()=>openDialog('create-dialog');$('open-join').onclick=()=>openDialog('join-dialog');
+  for(const button of document.querySelectorAll('[data-close]'))button.onclick=()=>$(button.dataset.close).close();
   let inviteHash;
   function readInvite(){
     inviteHash=new URLSearchParams(location.hash.slice(1));
     if(gameName[inviteHash.get('game')])$('join-game').value=inviteHash.get('game');
     $('code').value=/^[a-f0-9]{12}$/i.test(inviteHash.get('code')||'')?inviteHash.get('code').toUpperCase():'';
+    if($('code').value&&!net?.session)openDialog('join-dialog');
   }
   readInvite();window.addEventListener('hashchange',readInvite);
-  function say(message){$('status').textContent=message;}
+  function say(message){$('status').textContent=message;for(const dialog of document.querySelectorAll('dialog[open]'))dialog.querySelector('.dialog-status').textContent=message;}
   function endpoint(game){return connections[game].endpoint();}
   function remember(){try{sessionStorage.setItem('arcade-active-game',activeGame);}catch{}}
   function enter(game,action,code){
     if(net?.active||net?.session)return;
     saveName();activeGame=game;net=connections[game];state=null;returning=false;remember();
-    const options={...(game==='alkkagi'?{ruleset:$('ruleset').value,characterId:$('character').value}:{}),lobby:true,nickname:nickname(),title:$('title').value,public:$('visibility').value==='public'};
+    const options={...(game==='alkkagi'?{ruleset:$('ruleset').value,characterId:mobile.matches?'random':character.value}:{}),lobby:true,nickname:nickname(),title:$('title').value,public:$('visibility').value==='public'};
     if(game==='alkkagi')net.begin(action,code,options);else net.begin(action,code,nickname(),options);
     render();
   }
@@ -38,9 +49,11 @@
     if(net&&!net.session&&!net.state)state=null;
     const joined=!!net?.session,busy=!!net?.active||joined;
     $('browse').hidden=joined;$('waiting').hidden=!joined;
-    $('character').disabled=busy;$('nickname').disabled=busy;$('save-name').disabled=busy;
+    character.disabled=busy;$('nickname').disabled=busy;
+    $('open-create').disabled=busy;$('open-join').disabled=busy;
+    if(joined)for(const id of ['create-dialog','join-dialog'])if($(id).open)$(id).close();
     for(const id of ['create','join','watch-code'])$(id).disabled=busy;
-    if(!net){say('닉네임을 정하고 방을 만들거나 참가하세요.');return;}
+    if(!net){say('방을 만들거나 목록에서 참가하세요.');return;}
     if(!state){say(net.message||'방에 연결하고 있습니다…');return;}
     $('room-title').textContent=state.title||'함께 한 판';$('room-game').textContent=`${gameName[activeGame]}${activeGame==='alkkagi'?' · '+AlkkagiRules.get(state.ruleset).name:''} · ${state.public?'공개 방':'초대 방'}`;
     const phase=state.phase,team=net.session.team,spectator=net.session.role==='spectator',connected=net.connected&&state.connected.every(Boolean);
@@ -58,7 +71,7 @@
     $('ready-hint').textContent=phase==='lobby'?'두 사람 모두 준비하면 게임이 시작됩니다.':phase==='over'?'두 사람이 재대결에 동의하면 같은 닉네임으로 다시 시작합니다.':'경기로 돌아가서 이어 하거나 관전할 수 있습니다.';
     say(net.message||(!connected?'참가자가 연결되면 계속할 수 있습니다.':phase==='lobby'?'준비가 되면 아래 준비 버튼을 눌러주세요.':'같은 방과 닉네임이 유지됩니다.'));
   }
-  $('identity').onsubmit=e=>{e.preventDefault();saveName();say('닉네임을 저장했습니다.');};
+  $('identity').onsubmit=e=>{e.preventDefault();saveName();$('nickname').blur();};
   $('create-form').onsubmit=e=>{e.preventDefault();enter($('game').value,'create');};
   function join(watch){const code=$('code').value.trim().toUpperCase();if(!/^[A-F0-9]{12}$/.test(code)){say('12자리 방 코드를 입력하세요.');return;}enter($('join-game').value,watch?'watch':'join',code);}
   $('join-form').onsubmit=e=>{e.preventDefault();join(false);};$('watch-code').onclick=()=>join(true);
@@ -78,16 +91,24 @@
   const phaseName={lobby:'대기 중',waiting:'대기 중',select:'선택 중',placing:'배치 중',aim:'진행 중',moving:'진행 중',battle:'진행 중',over:'경기 종료'};
   function drawRooms(){
     const visible=rooms.filter(r=>$('filter').value==='all'||r.game===$('filter').value);
-    $('rooms').replaceChildren(...visible.map(r=>{
-      const card=document.createElement('article');card.className='room-card';card.dataset.code=r.code;
-      const badge=document.createElement('span');badge.className='badge';badge.textContent=`${gameName[r.game]}${r.game==='alkkagi'?' · '+AlkkagiRules.get(r.ruleset||'modern').name:''} · ${phaseName[r.phase]||'진행 중'}`;
-      const title=document.createElement('h3');title.textContent=r.title;
-      const info=document.createElement('p');info.textContent=`방장 ${r.host} · ${r.count}/2명 · 관전 ${r.spectators}명`;
-      const buttons=document.createElement('div');buttons.className='row';
-      const join=document.createElement('button');join.textContent=r.count===2?'참가 마감':'참가';join.className='primary';join.disabled=r.phase!=='lobby'||r.count>=2||!r.connected[0];join.onclick=()=>enter(r.game,'join',r.code);
-      const watch=document.createElement('button');watch.textContent='관전';watch.disabled=r.phase==='lobby'||r.spectators>=20;watch.onclick=()=>enter(r.game,'watch',r.code);
-      buttons.append(join,watch);card.append(badge,title,info,buttons);return card;
-    }));
+    const list=$('rooms'),existing=new Map([...list.children].map(el=>[el.dataset.code,el]));
+    for(const [index,r] of visible.entries()){
+      let card=existing.get(r.code);
+      if(!card){card=document.createElement('li');card.className='room-card';card.dataset.code=r.code;
+        card.innerHTML='<div class="room-name"><h3></h3><span class="badge"></span></div><p></p><div class="row"><button></button></div>';
+      }
+      const setText=(el,text)=>{if(el.textContent!==text)el.textContent=text;};
+      setText(card.querySelector('h3'),r.title);
+      setText(card.querySelector('.badge'),`${gameName[r.game]}${r.game==='alkkagi'?' · '+AlkkagiRules.get(r.ruleset||'modern').name:''}`);
+      setText(card.querySelector('p'),`${r.host} · ${r.count}/2명 · ${phaseName[r.phase]||'진행 중'}`);
+      const button=card.querySelector('button'),waiting=r.phase==='lobby';
+      setText(button,waiting?(r.count>=2?'참가 마감':'참가'):'관전');button.className=waiting?'primary':'';
+      button.disabled=!!net?.active||!!net?.session||(waiting?(r.count>=2||!r.connected[0]):r.spectators>=20);
+      button.onclick=()=>enter(r.game,waiting?'join':'watch',r.code);
+      if(list.children[index]!==card)list.insertBefore(card,list.children[index]||null);
+      existing.delete(r.code);
+    }
+    for(const card of existing.values())card.remove();
     if(directory?.readyState===1)$('directory-status').textContent=visible.length?`${visible.length}개의 공개 방 · 자동 갱신 중`:'열려 있는 공개 방이 없습니다. 첫 방을 만들어 보세요.';
   }
   $('filter').onchange=drawRooms;
