@@ -186,3 +186,19 @@ test('guided shot announces the nickname to players and spectators before physic
   game.broadcast(room);await watcher.next(m=>m.type==='state'&&!m.shotCue&&m.stones.some(s=>Math.hypot(s.vx,s.vy)>0));
   assert.equal(room.guideRemaining[0],0);
 });
+
+test('one-versus-one iron shatter is authoritative, private before impact and shared with spectators',async t=>{
+  const {room,host,guest,connect,game,shot}=await harness(t);
+  room.stones=room.stones.filter(s=>s.id===4||s.id===9);
+  Object.assign(room.stones[0],{x:1060,y:400});Object.assign(room.stones[1],{x:1097,y:400});
+  const watch=await connect();watch.send({type:'watch',code:room.code});await watch.next(m=>m.type==='joined');
+  room.shot(0,{...shot(4),vx:500,follow:0});
+  for(const viewer of [0,1,null])assert.ok(room.snapshot(viewer).stones.every(s=>!('shatterReady' in s)));
+  room.step(1/120);game.broadcast(room);
+  const states=await Promise.all([host,guest,watch].map(c=>c.next(m=>m.type==='state'&&m.shatterEvent)));
+  assert.ok(states.every(s=>s.shatterEvent.id===states[0].shatterEvent.id&&s.shatterEvent.target===9));
+  assert.ok(states.every(s=>s.stones.find(x=>x.id===9).vx>490));
+  for(let i=0;i<120;i++)room.step(1/120);
+  assert.equal(room.phase,'over');assert.equal(room.stones[0].alive,true);assert.equal(room.stones[1].alive,false);
+  room.shatterEvent.expiresAt=Date.now()-1;assert.equal(room.snapshot(null).shatterEvent,null);
+});

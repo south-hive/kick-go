@@ -217,3 +217,18 @@ test('help is optional, pauses local play and guide emphasis follows remaining u
     await page.screenshot({path:`test-results/alkkagi-guide-${viewport.width}.png`,fullPage:true});
   }
 });
+
+test('direct iron strike displays shatter once and reset clears the effect',async({page})=>{
+  await page.goto('/alkkagi.html');
+  await page.evaluate(()=>{
+    mode='local';phase='aim';turn=0;
+    stones=[{id:0,team:0,x:400,y:400,vx:0,vy:0,alive:true,iron:true},{id:5,team:1,x:437,y:400,vx:0,vy:0,alive:true,iron:true}];
+    launch(stones[0],500,0);
+  });
+  await expect(page.locator('#shatter-effect')).toBeVisible();
+  await expect(page.locator('#shatter-effect')).toContainText('파쇄');
+  await page.locator('.arena').screenshot({path:'test-results/iron-shatter.png'});
+  await expect(page.locator('#shatter-effect')).toBeHidden();
+  await page.evaluate(()=>{showShatter({id:'reset-check'});reset();});
+  await expect(page.locator('#shatter-effect')).toBeHidden();
+});

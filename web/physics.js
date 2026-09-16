@@ -6,6 +6,7 @@
   const hinges=[{x:214.5,y:584,w:111,h:32},{x:874.5,y:584,w:111,h:32}];
   // Arcade spin: preserve the launch frame, then release stored rotation on stone impact.
   function shoot(s,vx,vy,side=0,follow=0){
+    s.shatterReady=!!s.iron;
     s.iron=false;
     const speed=Math.hypot(vx,vy),length=Math.max(1,Math.hypot(side,follow));
     s.vx=vx;s.vy=vy;s.spinSide=side/length;s.spinFollow=follow/length;
@@ -26,11 +27,13 @@
     if(d>=R)return false;
     if(d>0){nx=dx/d;ny=dy/d;depth=R-d;}
     else{const sides=[{d:s.x-h.x,nx:-1,ny:0},{d:h.x+h.w-s.x,nx:1,ny:0},{d:s.y-h.y,nx:0,ny:-1},{d:h.y+h.h-s.y,nx:0,ny:1}].sort((a,b)=>a.d-b.d);nx=sides[0].nx;ny=sides[0].ny;depth=R+sides[0].d;}
+    if(s.shatterReady)s.shatterReady=false;
     s.x+=nx*depth;s.y+=ny*depth;const v=s.vx*nx+s.vy*ny;
     if(v<0){s.vx-=1.74*v*nx;s.vy-=1.74*v*ny;}return v<-15;
   }
   function stop(s){
     s.vx=0;s.vy=0;
+    if(s.shatterReady)s.shatterReady=false;
     if(s.spinPower!==undefined)s.spinPower=0;
     if(s.spinSide!==undefined)s.spinSide=0;
     if(s.spinFollow!==undefined)s.spinFollow=0;
@@ -40,7 +43,7 @@
     if(s.x>=EDGE&&s.x<=SIZE-EDGE&&s.y>=EDGE&&s.y<=SIZE-EDGE)return false;
     s.alive=false;stop(s);onFall(s);return true;
   }
-  function step(stones,dt,onHit=()=>{},onFall=()=>{},onCollision=()=>{}){
+  function step(stones,dt,onHit=()=>{},onFall=()=>{},onCollision=()=>{},onShatter=()=>{}){
     for(const s of stones){if(fallOutside(s,onFall))continue;s.x+=s.vx*dt;s.y+=s.vy*dt;
       if(fallOutside(s,onFall))continue;
       for(const h of hinges)if(hitRect(s,h)){onHit(s,Math.hypot(s.vx,s.vy));onCollision(s,null);}
@@ -56,6 +59,16 @@
       const dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy);if(d>=R*2)continue;
       const nx=d?dx/d:1,ny=d?dy/d:0,overlap=(R*2-d)/2+.01;
       const closing=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny;
+      if(closing<0){
+        const attacker=a.shatterReady&&b.iron?a:b.shatterReady&&a.iron?b:null;
+        if(attacker&&a.team!==b.team){
+          const target=attacker===a?b:a;
+          target.iron=false;
+          onShatter({attacker:attacker.id,target:target.id,x:target.x,y:target.y});
+        }
+        if(a.shatterReady)a.shatterReady=false;
+        if(b.shatterReady)b.shatterReady=false;
+      }
       if(closing<0&&a.team!==b.team&&(a.iron||b.iron)){
         const guard=a.iron?a:b,other=guard===a?b:a,sign=guard===a?1:-1;
         const gx=nx*sign,gy=ny*sign;
@@ -77,7 +90,7 @@
   }
   const moving=stones=>stones.some(s=>s.alive&&Math.hypot(s.vx,s.vy)>STOP_SPEED);
   function predict(stones,id,vx,vy,side=0,follow=0){
-    const sim=stones.map(s=>({...s,iron:false})),shooter=sim.find(s=>s.id===id&&s.alive);
+    const sim=stones.map(s=>({...s,iron:false,shatterReady:false})),shooter=sim.find(s=>s.id===id&&s.alive);
     const result={approach:[],branches:[],collision:false};
     if(!shooter)return result;
     const point=s=>({x:s.x,y:s.y});

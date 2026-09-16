@@ -10,6 +10,17 @@ function viewPoint(p){return flippedView()?{x:P.SIZE-p.x,y:P.SIZE-p.y}:{x:p.x,y:
 let guideCache=null;
 let aiBelief;
 let localCue=null,queuedShot=null,cueKey=null;
+let shatterKey=null,shatterTimer=null;
+function clearShatter(){clearTimeout(shatterTimer);$('shatter-effect').hidden=true;shatterKey=null;}
+function showShatter(event){
+  if(!event||event.id===shatterKey)return;
+  shatterKey=event.id;clearTimeout(shatterTimer);
+  const el=$('shatter-effect');el.hidden=false;
+  el.style.animation='none';void el.offsetWidth;el.style.animation='';
+  const remaining=Math.max(0,Math.min(1.1,event.remaining??1.1));
+  el.style.animationDelay=`-${1.1-remaining}s`;
+  shatterTimer=setTimeout(()=>{el.hidden=true;},remaining*1000);tone(900);
+}
 function showShotCue(cue){
   const el=$('shot-cue');
   if(!cue){el.hidden=true;cueKey=null;return;}
@@ -140,6 +151,7 @@ function reset(rematch=false){
   localCue=null;queuedShot=null;showShotCue(null);
   updateStrike();stones=P.setup();aiBelief=new AlkkagiAI.Belief(stones);
   firstPlayer=rematch?1-firstPlayer:Math.floor(Math.random()*2);turn=firstPlayer;
+  clearShatter();
   guideRemaining=[0,1].map(team=>team===firstPlayer?1:2);guideArmed=[false,false];guides.fill(false);guideCache=null;
   phase=mode==='online'?'waiting':'select';ironTeam=0;ironRevealed=false;ironChoice=null;cancelDrag();falls=[];aiAt=0;accumulator=0;
   $('result').hidden=true;$('rematch-message').textContent='';power(0);score();status();renderIron();syncGuides();
@@ -204,14 +216,14 @@ function stepBattle(now){
     return;
   }
   const before=mode==='ai'?AlkkagiAI.visible(stones):null;
-  P.step(stones,1/120,(s,v)=>{if(v>70)tone(v);},s=>{falls.push({...s,time:now});tone(500,true);score();});
+  P.step(stones,1/120,(s,v)=>{if(v>70)tone(v);},s=>{falls.push({...s,time:now});tone(500,true);score();},undefined,event=>showShatter({...event,id:`local:${performance.now()}`}));
   if(before)aiBelief.observeStep(before,AlkkagiAI.visible(stones));
 }
 function frame(now){for(const node of [$('shot-cue'),$('shot-cue').firstElementChild])node.style.animationPlayState=mode!=='online'&&(document.hidden||$('confirm').open||$('game-help').open)?'paused':'running';const delta=last?Math.min((now-last)/1000,.05):0;last=now;if(mode==='online'){if(onlineTargets&&phase==='moving'){const mix=1-Math.exp(-22*delta);for(const s of stones){const target=onlineTargets[s.id];if(s.alive&&target){s.x+=(target.x-s.x)*mix;s.y+=(target.y-s.y)*mix;}}}}else if(!document.hidden&&!$('confirm').open&&!$('game-help').open){if(phase==='moving'){accumulator+=delta;while(accumulator>=1/120){stepBattle(now);accumulator-=1/120;}if(!localCue&&!P.moving(stones))finish();}else if(aiAt&&now>=aiAt){aiAt=0;chooseAI();}}draw(now);requestAnimationFrame(frame);}
 function requestReset(nextMode=mode){if(mode==='online'&&nextMode==='online'){net.rematch();return;}pending=nextMode;cancelDrag();$('confirm').showModal();}
 function setMode(next){
   if(mode==='online'&&next!=='online'){net.stop();history.replaceState(null,'',location.pathname+location.search);}
-  mode=next;onlineTargets=null;
+  clearShatter();mode=next;onlineTargets=null;
   for(const key of ['ai','local','online']){$(key+'-mode').classList.toggle('selected',mode===key);$(key+'-mode').setAttribute('aria-pressed',mode===key);}
   $('online-panel').hidden=mode!=='online';
   syncGuides();
@@ -228,14 +240,14 @@ function applyOnlineState(state){
   if(mode!=='online')return;
   if(state.phase==='lobby'){location.replace('lobby.html?game=alkkagi&return=1');return;}
   const changed=phase!==state.phase||turn!==state.turn;
-  if(changed&&state.phase==='select')ironChoice=null;
+  if(changed&&state.phase==='select'){ironChoice=null;clearShatter();}
   if(changed){cancelDrag();updateStrike();}
   if(changed)guides.fill(false);
   firstPlayer=state.firstPlayer;guideRemaining=[...state.guideRemaining];guideArmed=[...state.guideArmed];
   onlineTargets=state.stones.map(s=>({...s}));
   stones=state.stones.map(s=>{const old=stones.find(o=>o.id===s.id);if(old?.alive&&!s.alive){falls.push({...old,time:performance.now()});tone(500,true);}return state.phase==='moving'&&old?.alive&&s.alive?{...s,x:old.x,y:old.y}:{...s};});
   if(drag)drag.s=stones.find(s=>s.id===drag.s.id);
-  turn=state.turn;phase=state.phase;showShotCue(state.shotCue);score();
+  turn=state.turn;phase=state.phase;showShotCue(state.shotCue);showShatter(state.shatterEvent);score();
   $('result').hidden=phase!=='over';
   if(phase==='over'){const c=score();$('winner').textContent=c[0]===c[1]?'무승부':c[1]===0?'흑돌 승리':'백돌 승리';$('result-detail').textContent=c[0]===c[1]?'마지막 돌이 함께 판을 떠났어요.':`남은 돌 ${Math.max(...c)}개 · 멋진 승부였어요`;}
 }

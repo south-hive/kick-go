@@ -14,6 +14,7 @@ class Room {
     this.guideRemaining = [0,1].map(team=>team===firstPlayer?1:2); this.guideArmed = [false,false];
     this.votes = [false, false]; this.lastActivity = now; this.shotTime = 0;
     this.shotCue = null; this.pendingShot = null;
+    this.shatterEvent = null; this.shatterSequence = 0;
     this.ironReady = [false, false]; this.spectators = new Set();
   }
   seat(index, socket, now = Date.now()) {
@@ -68,8 +69,10 @@ class Room {
       this.pendingShot=null;this.shotCue=null;
       return;
     }
-    P.step(this.stones, dt); this.shotTime += dt;
-    if (this.shotTime > 25) this.stones.forEach(s => { s.vx = 0; s.vy = 0; s.spinPower = 0; });
+    P.step(this.stones, dt,undefined,undefined,undefined,event=>{
+      this.shatterEvent={...event,id:`${this.match}:${++this.shatterSequence}`,expiresAt:Date.now()+1100};
+    }); this.shotTime += dt;
+    if (this.shotTime > 25) this.stones.forEach(s => { s.vx = 0; s.vy = 0; s.spinPower = 0; s.shatterReady = false; });
     if (!P.moving(this.stones)) {
       this.phase = counts(this.stones).some(n => n === 0) ? 'over' : 'aim';
       if (this.phase === 'aim') this.turn = 1 - this.turn;
@@ -83,17 +86,19 @@ class Room {
       this.firstPlayer = 1 - this.firstPlayer;
       this.stones = P.setup(); this.turn = this.firstPlayer; this.phase = 'select'; this.ironReady = [false, false];
       this.guideRemaining = [0,1].map(team=>team===this.firstPlayer?1:2); this.guideArmed = [false,false];
-      this.shotCue=null;this.pendingShot=null;
+      this.shotCue=null;this.pendingShot=null;this.shatterEvent=null;
       this.match++; this.revision++; this.votes = [false, false];
     }
     this.lastActivity = Date.now();
   }
   snapshot(viewer) {
     const stones = this.stones.map(s => {
-      const { iron, ...publicStone } = s;
+      const { iron, shatterReady, ...publicStone } = s;
       return viewer === null || s.team === viewer ? { ...publicStone, iron: !!iron } : publicStone;
     });
-    return { ...L.metadata(this), shotCue:this.shotCue?{...this.shotCue}:null, role: viewer === null ? 'spectator' : 'player', spectators: this.spectators.size, type: 'state', version: VERSION, code: this.code, stones, ironReady: [...this.ironReady],
+    const event=this.shatterEvent;
+    const shatterEvent=event&&event.expiresAt>Date.now()?{id:event.id,attacker:event.attacker,target:event.target,x:event.x,y:event.y,remaining:(event.expiresAt-Date.now())/1000}:null;
+    return { ...L.metadata(this), shatterEvent, shotCue:this.shotCue?{...this.shotCue}:null, role: viewer === null ? 'spectator' : 'player', spectators: this.spectators.size, type: 'state', version: VERSION, code: this.code, stones, ironReady: [...this.ironReady],
       firstPlayer: this.firstPlayer, guideRemaining: [...this.guideRemaining], guideArmed: [...this.guideArmed],
       turn: this.turn, phase: this.phase, revision: this.revision, match: this.match,
       connected: this.players.map(p => !!(p && p.socket && p.socket.readyState === 1)), votes: this.votes };

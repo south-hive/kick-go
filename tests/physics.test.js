@@ -181,3 +181,30 @@ test('friendly impact consumes protection in either pair order, but mere resting
   const a=stone(400,400),b={...stone(435,400),iron:true};
   P.step([a,b],1/120);assert.equal(b.iron,true);
 });
+
+test('last iron stones can shatter by direct shot, transfer normal momentum and win',()=>{
+  for(const reversed of [false,true]){
+    const a={...stone(1060,400),id:0,iron:true},b={...stone(1097,400),id:1,team:1,iron:true};
+    const board=reversed?[b,a]:[a,b],events=[];
+    P.shoot(a,500,0);assert.equal(a.iron,false);assert.equal(a.shatterReady,true);
+    P.step(board,1/120,undefined,undefined,undefined,e=>events.push(e));
+    assert.equal(events.length,1);assert.equal(events[0].target,1);
+    assert.equal(b.iron,false);assert.ok(b.vx>490);assert.ok(Math.abs(a.vx)<1e-9);
+    for(let i=0;i<120;i++)P.step(board,1/120,undefined,undefined,undefined,e=>events.push(e));
+    assert.equal(a.alive,true);assert.equal(b.alive,false);assert.equal(events.length,1);
+  }
+});
+
+test('hinge cushion and any preceding stone contact forfeit shattering',()=>{
+  for(const team of [0,1]){
+    const a={...stone(400,400),id:0,iron:true},middle={...stone(437,400),id:1,team};
+    P.shoot(a,500,0);P.step([a,middle],1/120);assert.equal(a.shatterReady,false);
+    const guard={...stone(437,400),id:2,team:1,iron:true};a.x=400;a.vx=500;
+    let shattered=false;P.step([a,guard],1/120,undefined,undefined,undefined,()=>shattered=true);
+    assert.equal(shattered,false);assert.equal(guard.vx,0);assert.ok(a.vx<0);
+  }
+  const a={...stone(270,565),id:0,iron:true};P.shoot(a,0,500);P.step([a],1/120);
+  assert.equal(a.shatterReady,false);assert.ok(a.vy<0);
+  const stopped={...stone(400,400),iron:true};P.shoot(stopped,1,0);P.step([stopped],1/120);
+  assert.equal(stopped.shatterReady,false);
+});
