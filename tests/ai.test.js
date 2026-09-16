@@ -62,3 +62,35 @@ test('AI adds aim and power error and handles an empty side',()=>{
   assert.ok(Math.hypot(b.vx,b.vy)>Math.hypot(center.vx,center.vy));
   assert.equal(AI.chooseShot([]),null);board[0].alive=false;assert.equal(AI.chooseShot(board),null);
 });
+
+test('targets hiding behind either hinge trigger a safe approach with a clear next shot',()=>{
+  for(const x of [270,930])for(const flip of [false,true])for(const random of [0,.5,.99]){
+    const board=[{...stone(x,flip?400:800),id:0},{...stone(x,flip?800:400),id:5,team:1}];
+    const before=JSON.stringify(board),belief=new AI.Belief(board);
+    const direct={id:5,angle:Math.atan2(board[0].y-board[1].y,0),speed:1030};
+    assert.ok(AI.evaluate(board,direct,belief)<-100,'the old direct shot rebounds out');
+    const shot=AI.chooseShot(board,belief,()=>random);
+    assert.equal(JSON.stringify(board),before);
+    const sim=board.map(s=>({...s}));P.shoot(sim[1],shot.vx,shot.vy);
+    for(let n=0;n<1300&&P.moving(sim);n++)P.step(sim,1/120);
+    assert.equal(sim[1].alive,true,'AI must not sacrifice its last stone against a hinge');
+    assert.equal(P.moving(sim),false);
+    assert.ok(Math.abs(sim[1].x-x)>P.R*2,'move to the side rather than repeat the blocked shot');
+    if(sim[0].alive){
+      const angle=Math.atan2(sim[0].y-sim[1].y,sim[0].x-sim[1].x);let firstContact=null;
+      P.shoot(sim[1],Math.cos(angle)*750,Math.sin(angle)*750);
+      for(let n=0;n<1300&&P.moving(sim)&&firstContact===null;n++)P.step(sim,1/120,()=>{},()=>{},(a,b)=>{firstContact??=b?'stone':'hinge';});
+      assert.equal(firstContact,'stone','the repositioning must open an attack lane');
+    }
+  }
+});
+
+test('an open winning shot is preferred to harmless repositioning',()=>{
+  const board=[{...stone(1080,400),id:0},{...stone(800,400),id:5,team:1}];
+  const belief=new AI.Belief(board);belief.observeShot(0,0);
+  for(const random of [0,.5,.99]){
+    const sim=board.map(s=>({...s})),shot=AI.chooseShot(board,belief,()=>random);
+    P.shoot(sim[1],shot.vx,shot.vy);for(let n=0;n<1300&&P.moving(sim);n++)P.step(sim,1/120);
+    assert.equal(sim[0].alive,false);assert.equal(sim[1].alive,true);
+  }
+});

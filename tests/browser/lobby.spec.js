@@ -27,9 +27,14 @@ for(const game of ['alkkagi','naval'])test(`${game} public lobby starts only aft
     await expect(watch).toHaveURL(new RegExp(file));
     if(game==='alkkagi'){
       await expect(watch.locator('#online-role')).toHaveText('관전 중');await expect(watch.locator('#iron-panel')).toBeHidden();await expect(watch.locator('#strike-pad')).toBeDisabled();
-      expect(await watch.evaluate(()=>stones.some(s=>'iron' in s))).toBe(false);
+      expect(await watch.evaluate(()=>stones.every(s=>s.iron===false))).toBe(true);
       for(const p of [host,guest]){await p.locator('#iron-options button').first().click();await p.locator('#iron-confirm').click();}
       await expect.poll(()=>host.evaluate(()=>phase)).toBe('aim');
+      await expect.poll(()=>watch.evaluate(()=>stones.filter(visibleIron).map(s=>s.team).sort())).toEqual([0,1]);
+      await expect(watch.locator('#iron-state')).toContainText('친구 금강불괴 · 대기');
+      await expect(watch.locator('#iron-state')).toContainText('친구 (2) 금강불괴 · 대기');
+      for(const p of [host,guest])expect(await p.evaluate(()=>stones.filter(s=>s.team!==net.session.team).some(s=>'iron' in s))).toBe(false);
+
     }else{await expect(watch.locator('#naval-observer-wait')).toBeVisible();await expect(watch.locator('#naval-seas')).toBeHidden();}
     await host.getByRole('link',{name:'← 온라인 로비',exact:true}).click();
     await expect(host.locator('#waiting')).toBeVisible();await expect(host.locator('#room-title')).toHaveText('같이 하는 경기');

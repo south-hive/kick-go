@@ -15,8 +15,9 @@ async function shoot(page, id) {
 test('two browser contexts trade shots, share positions, and resume after reload', async ({ browser }) => {
   const a = await browser.newContext({ baseURL: 'http://127.0.0.1:8091', viewport: { width: 393, height: 852 } });
   const b = await browser.newContext({ baseURL: 'http://127.0.0.1:8091', viewport: { width: 393, height: 852 } });
-  const host = await a.newPage(), guest = await b.newPage();
-  const errors = []; for (const p of [host, guest]) p.on('pageerror', e => errors.push(e.message));
+  const c = await browser.newContext({baseURL:'http://127.0.0.1:8091',viewport:{width:393,height:852}});
+  const host = await a.newPage(), guest = await b.newPage(), watch=await c.newPage();
+  const errors = []; for (const p of [host, guest, watch]) p.on('pageerror', e => errors.push(e.message));
   try {
     await online(host); await host.locator('#room-create').click();
     await expect(host.locator('#online-role')).toHaveText('나: 흑돌');
@@ -27,6 +28,7 @@ test('two browser contexts trade shots, share positions, and resume after reload
     await host.locator('#iron-options button').nth(4).click();await host.locator('#iron-confirm').click();
     await guest.locator('#iron-options button').nth(4).click();await guest.locator('#iron-confirm').click();
     await expect.poll(()=>host.evaluate(()=>phase)).toBe('aim');
+    const watchLink=new URL(link);watchLink.searchParams.set('watch','1');await watch.goto(watchLink.href);await expect(watch.locator('#online-role')).toHaveText('관전 중');
     const firstTeam=await host.evaluate(()=>net.state.firstPlayer);
     const first=firstTeam===0?host:guest,second=firstTeam===0?guest:host;
     await expect(first.locator('#status')).toContainText('내 차례');
@@ -39,6 +41,10 @@ test('two browser contexts trade shots, share positions, and resume after reload
     await first.locator('#guide-'+firstTeam).click();
     await expect.poll(()=>first.evaluate(()=>net.state.guideArmed[net.session.team])).toBe(true);
     await shoot(first, firstTeam*5);
+    await expect(first.locator('#shot-cue')).toBeVisible();
+    await expect(second.locator('#shot-cue')).toBeVisible();
+    await expect(watch.locator('#shot-cue')).toBeVisible();
+    await expect(watch.locator('#shot-cue-name')).toHaveText(await first.locator('#shot-cue-name').textContent());
     await expect(second.locator('#status')).toContainText('내 차례');
     await expect(first.locator('#strike-pad')).toBeDisabled();
     expect(await first.evaluate(()=>net.state.guideRemaining[net.session.team])).toBe(0);
@@ -55,7 +61,7 @@ test('two browser contexts trade shots, share positions, and resume after reload
     await guest.locator('#room-leave').click(); await guest.locator('#accept').click();
     await expect(host.locator('#online-message')).toContainText('종료');
     expect(errors).toEqual([]);
-  } finally { await a.close(); await b.close(); }
+  } finally { await a.close(); await b.close(); await c.close(); }
 });
 
 test('iron selection, owner marker and ordinary prediction work on mobile and desktop',async({page})=>{
@@ -162,4 +168,22 @@ test('a new local game can open with white and rematch swaps opener and guide al
   await page.goto('/alkkagi.html');
   const result=await page.evaluate(()=>{Math.random=()=>.9;reset();const first=[firstPlayer,...guideRemaining];reset(true);return{first,second:[firstPlayer,...guideRemaining]};});
   expect(result).toEqual({first:[1,2,1],second:[0,1,2]});
+});
+
+test('guided local shot shows a board-centered nickname cue before launch and clears on reset',async({page})=>{
+  await page.goto('/alkkagi.html');
+  await page.evaluate(()=>localStorage.setItem('arcade-nickname','용감한 고양이'));
+  await page.locator('#iron-options button').first().click();await page.locator('#iron-confirm').click();
+  await page.locator('#guide-0').click();
+  const before=await page.evaluate(()=>{const positions=stones.map(s=>[s.x,s.y,s.vx,s.vy]);launch(stones[0],100,0);return positions;});
+  await expect(page.locator('#shot-cue')).toBeVisible();await expect(page.locator('#shot-cue-name')).toHaveText('용감한 고양이,');
+  expect(await page.evaluate(()=>stones.map(s=>[s.x,s.y,s.vx,s.vy]))).toEqual(before);
+  await expect(page.locator('#strike-pad')).toBeDisabled();
+  await page.locator('.arena').screenshot({path:'test-results/coward-cue-mobile.png'});
+  await expect(page.locator('#shot-cue')).toBeHidden();
+  await expect.poll(()=>page.evaluate(()=>stones[0].x)).toBeGreaterThan(before[0][0]);
+  expect(await page.evaluate(()=>guideRemaining[0])).toBe(0);
+  await page.evaluate(()=>{reset();phase='aim';turn=0;guideArmed[0]=true;launch(stones[0],100,0);reset();});
+  await expect(page.locator('#shot-cue')).toBeHidden();
+  expect(await page.evaluate(()=>queuedShot)).toBe(null);
 });

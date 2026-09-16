@@ -105,6 +105,7 @@ class OnlineGame {
   text() {
     if (this.message) return this.message;
     if (!this.connected || !this.state) return '방을 만들거나 초대 코드를 입력하세요.';
+    if(this.state.shotCue)return `${this.state.shotCue.name} · 겁쟁이 샷 준비 중…`;
     if(this.session.role==='spectator')return this.state.phase==='select'?'금강불괴 선택 중 · 관전':this.state.phase==='over'?'경기 종료 · 관전':`관전 중 · ${this.state.names?.[this.state.turn]||'플레이어'} 차례`;
     if (this.state.phase === 'waiting') return '초대 링크를 보내 주세요 · 상대 입장 대기 중';
     if (!this.state.connected.every(Boolean)) return '상대 연결이 끊겼습니다 · 재접속 대기 중';

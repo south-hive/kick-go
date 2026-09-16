@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
   <meta name="theme-color" content="#182722">
   <title>나무 위의 한 수 · 알까기</title>
-  <link rel="stylesheet" href="style.css?v=1.6.0">
+  <link rel="stylesheet" href="style.css?v=1.6.1">
 </head>
 <body>
   <nav class="game-back"><a href="./">← 게임 선택</a></nav>
@@ -19,6 +19,7 @@
     <div class="status"><span id="turn-dot"></span><p id="status" role="status" aria-live="polite">흑돌 차례 · 돌을 당겨 조준하세요</p></div>
     <section class="arena" aria-label="알까기 게임판">
       <canvas id="game" aria-label="내 돌을 누르고 뒤로 당겼다가 놓으면 반대 방향으로 발사됩니다."></canvas>
+      <div id="shot-cue" class="shot-cue" role="status" aria-live="polite" hidden><div class="shot-cue-card"><span>겁쟁이 모드 발동!</span><strong id="shot-cue-name"></strong><b>겁쟁이 녀석!</b><small>계산은 완벽… 이제 쏜다!</small></div></div>
       <div id="iron-panel" class="iron-panel" hidden>
         <h2 id="iron-title">금강불괴</h2>
         <button id="iron-reveal" class="primary">선택 시작</button>
@@ -47,9 +48,9 @@
       <small>방장 흑돌 · 참가자 백돌 · 연결이 끊기면 10분 안에 같은 창으로 돌아오세요.</small>
     </section>
     <p class="caption">손끝의 힘, 한 수의 승부.</p>
-  <p class="release-version" data-release>v1.6.0 · 로컬</p>
+  <p class="release-version" data-release>v1.6.1 · 로컬</p>
 </main>
   <dialog id="confirm"><h2>새 판을 시작할까요?</h2><p>진행 중인 경기는 초기화됩니다.</p><div><button id="cancel">계속 하기</button><button id="accept" class="primary">새로 시작</button></div></dialog>
-  <script src="config.js?v=1.6.0"></script><script src="physics.js?v=1.6.0"></script><script src="ai.js?v=1.6.0"></script><script src="online.js?v=1.6.0"></script><script src="game.js?v=1.6.0"></script>
+  <script src="config.js?v=1.6.1"></script><script src="physics.js?v=1.6.1"></script><script src="ai.js?v=1.6.1"></script><script src="online.js?v=1.6.1"></script><script src="game.js?v=1.6.1"></script>
 </body>
 </html>

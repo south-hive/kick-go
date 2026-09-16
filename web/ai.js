@@ -44,6 +44,20 @@
     }
     probability(id){return this.active[id]||0;}
   }
+  // Conservative swept-disc visibility against the two fixed hinges.
+  function clearLane(a,b){
+    return !P.hinges.some(h=>{
+      let enter=0,exit=1;
+      for(const [start,delta,lo,hi] of [[a.x,b.x-a.x,h.x-P.R-2,h.x+h.w+P.R+2],[a.y,b.y-a.y,h.y-P.R-2,h.y+h.h+P.R+2]]){
+        if(Math.abs(delta)<1e-9){if(start<lo||start>hi)return false;}
+        else{const t1=(lo-start)/delta,t2=(hi-start)/delta;enter=Math.max(enter,Math.min(t1,t2));exit=Math.min(exit,Math.max(t1,t2));if(enter>exit)return false;}
+      }
+      return true;
+    });
+  }
+  function approachCost(stone,targets){
+    return targets.length?Math.min(...targets.map(t=>Math.hypot(t.x-stone.x,t.y-stone.y)+(clearLane(stone,t)?0:600))):0;
+  }
   function outcome(board,shot,ironId=null){
     const sim=board.map(s=>({...s,iron:s.id===ironId})),contacts=new Set();
     const shooter=sim.find(s=>s.id===shot.id);
@@ -56,6 +70,14 @@
       const orig=board.find(v=>v.id===s.id);if(!orig.alive)continue;
       if(!s.alive)value+=s.team===0?100:-115;
       else if(s.team===0)value+=(Math.hypot(s.x-600,s.y-600)-Math.hypot(orig.x-600,orig.y-600))*.035;
+    }
+    if(shooter.alive){
+      const original=board.find(s=>s.id===shot.id);
+      const targets=board.filter(s=>s.alive&&s.team===0);
+      // A quiet move is useful when it opens a firing lane for the next turn.
+      if(!contacts.size)value+=Math.max(-20,Math.min(20,(approachCost(original,targets)-approachCost(shooter,targets))*.025));
+      const edge=Math.min(shooter.x-P.EDGE,P.SIZE-P.EDGE-shooter.x,shooter.y-P.EDGE,P.SIZE-P.EDGE-shooter.y);
+      value-=Math.max(0,90-edge)*.1;
     }
     return{value,contacts,survived:shooter.alive,consumed:ironId!==null&&!sim.find(s=>s.id===ironId)?.iron};
   }
@@ -73,15 +95,29 @@
   }
   function chooseShot(stones,belief=new Belief(stones),rng=Math.random){
     const board=visible(stones),targets=board.filter(s=>s.alive&&s.team===0),candidates=[];
-    for(const s of board.filter(s=>s.alive&&s.team===1))for(const target of targets)for(const offset of [-.14,0,.14])for(const speed of [750,1030,1330]){
-      const shot={id:s.id,angle:Math.atan2(target.y-s.y,target.x-s.x)+offset,speed};
-      candidates.push({...shot,value:evaluate(board,shot,belief)});
+    for(const s of board.filter(s=>s.alive&&s.team===1)){
+      for(const target of targets)for(const offset of [-.14,0,.14])for(const speed of [250,480,750,1030,1330]){
+        const shot={id:s.id,angle:Math.atan2(target.y-s.y,target.x-s.x)+offset,speed};
+        candidates.push({...shot,value:evaluate(board,shot,belief)});
+      }
+      if(targets.some(t=>!clearLane(s,t))){
+        // Include sideways and diagonal approaches, not just shots at the hidden target.
+        const angles=Array.from({length:8},(_,i)=>i*Math.PI/4);
+        for(const h of P.hinges)for(const x of [h.x-P.R-40,h.x+h.w+P.R+40])for(const y of [h.y-P.R-40,h.y+h.h+P.R+40])angles.push(Math.atan2(y-s.y,x-s.x));
+        for(const angle of angles)for(const speed of [200,350,500]){
+          const shot={id:s.id,angle,speed};candidates.push({...shot,value:evaluate(board,shot,belief)});
+        }
+      }
     }
     if(!candidates.length)return null;
     candidates.sort((a,b)=>b.value-a.value);
-    const pick=candidates[Math.floor(rng()*Math.min(15,candidates.length))];
+    const shortlist=candidates.filter(s=>s.value>=candidates[0].value-8).slice(0,6);
+    const pick=shortlist[Math.floor(rng()*shortlist.length)];
     const angle=pick.angle+(rng()-.5)*2*Math.PI/180,speed=Math.min(1360,pick.speed*(.9+rng()*.2));
-    return{id:pick.id,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed};
+    // Human-like inaccuracy must not turn a safe plan into an obvious rebound suicide.
+    const adjusted={id:pick.id,angle,speed};
+    const chosen=evaluate(board,adjusted,belief)>=pick.value-8?adjusted:pick;
+    return{id:chosen.id,vx:Math.cos(chosen.angle)*chosen.speed,vy:Math.sin(chosen.angle)*chosen.speed};
   }
   const api={visible,Belief,evaluate,chooseShot};
   if(typeof module!=='undefined')module.exports=api;root.AlkkagiAI=api;

@@ -9,9 +9,33 @@ function flippedView(){return mode==='online'&&net.session?.team===1;}
 function viewPoint(p){return flippedView()?{x:P.SIZE-p.x,y:P.SIZE-p.y}:{x:p.x,y:p.y};}
 let guideCache=null;
 let aiBelief;
+let localCue=null,queuedShot=null,cueKey=null;
+function showShotCue(cue){
+  const el=$('shot-cue');
+  if(!cue){el.hidden=true;cueKey=null;return;}
+  if(cueKey===cue.id)return;
+  cueKey=cue.id;$('shot-cue-name').textContent=cue.name+',';
+  el.hidden=false;
+  for(const node of [el,el.firstElementChild]){
+    node.style.animation='none';void node.offsetWidth;node.style.animation='';
+    node.style.animationDelay=`-${Math.max(0,cue.duration-cue.remaining)}s`;
+  }
+  tone(450);
+}
+function fireLocal(shot){
+  if(mode==='ai')aiBelief.observeShot(shot.s.id,shot.s.team);
+  P.shoot(shot.s,shot.vx,shot.vy,shot.side,shot.follow);
+}
 let ironTeam=0,ironRevealed=false,ironChoice=null;
 function ironOwner(){return mode==='online'?net.session?.team:mode==='ai'?0:turn;}
+function watching(){return mode==='online'&&net.session?.role==='spectator';}
+function visibleIron(s){return s.alive&&s.iron&&(watching()||(s.team===ironOwner()&&phase!=='select'));}
 function renderIron(){
+  if(watching()){
+    $('iron-panel').hidden=true;
+    $('iron-state').textContent=[0,1].map(team=>`${net.state?.names?.[team]||`${team+1}P`} 금강불괴 · ${!net.state?.ironReady?.[team]?'선택 중':stones.some(s=>s.team===team&&s.iron&&s.alive)?'대기':'소진'}`).join(' / ');
+    return;
+  }
   const selecting=phase==='select'&&!(mode==='online'&&net.session?.role==='spectator');
   const handoff=phase==='handoff';
   const team=mode==='online'?net.session?.team:ironTeam;
@@ -106,8 +130,9 @@ function resize(){const scale=Math.min(devicePixelRatio||1,3);canvas.width=Math.
 new ResizeObserver(resize).observe(canvas);
 function tone(speed=100,drop=false){if(!sound||!audio)return;const o=audio.createOscillator(),g=audio.createGain();o.type=drop?'sine':'triangle';o.frequency.setValueAtTime(drop?180:750+Math.min(speed,900),audio.currentTime);o.frequency.exponentialRampToValueAtTime(drop?55:240,audio.currentTime+.08);g.gain.setValueAtTime(Math.min(.12,speed/6000),audio.currentTime);g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+.12);o.connect(g);g.connect(audio.destination);o.start();o.stop(audio.currentTime+.13);}
 function score(){const counts=[0,0];stones.forEach(s=>{if(s.alive)counts[s.team]++;});$('black-count').textContent=counts[0];$('white-count').textContent=counts[1];return counts;}
-function status(){if(mode==='online'){renderOnline();return;}$('restart').disabled=false;$('restart').textContent='↻ 새 게임';$('again').disabled=false;$('again').textContent='한 판 더 하기 ↗';$('strike-pad').disabled=!canSetStrike();$('strike-reset').disabled=!canSetStrike();const name=turn===0?'흑돌':'백돌';$('black-player').classList.toggle('active',turn===0);$('white-player').classList.toggle('active',turn===1);$('status').textContent=phase==='over'?'경기 종료':phase==='moving'?'돌이 멈출 때까지 기다려 주세요':turn===1&&mode==='ai'?'백돌이 다음 수를 생각하고 있어요…':`${name} 차례 · 돌을 당겨 조준하세요`;}
+function status(){if(mode==='online'){renderOnline();return;}$('restart').disabled=false;$('restart').textContent='↻ 새 게임';$('again').disabled=false;$('again').textContent='한 판 더 하기 ↗';$('strike-pad').disabled=!canSetStrike();$('strike-reset').disabled=!canSetStrike();const name=turn===0?'흑돌':'백돌';$('black-player').classList.toggle('active',turn===0);$('white-player').classList.toggle('active',turn===1);$('status').textContent=phase==='over'?'경기 종료':phase==='moving'?(localCue?'겁쟁이 샷 준비 중…':'돌이 멈출 때까지 기다려 주세요'):turn===1&&mode==='ai'?'백돌이 다음 수를 생각하고 있어요…':`${name} 차례 · 돌을 당겨 조준하세요`;}
 function reset(rematch=false){
+  localCue=null;queuedShot=null;showShotCue(null);
   updateStrike();stones=P.setup();aiBelief=new AlkkagiAI.Belief(stones);
   firstPlayer=rematch?1-firstPlayer:Math.floor(Math.random()*2);turn=firstPlayer;
   guideRemaining=[0,1].map(team=>team===firstPlayer?1:2);guideArmed=[false,false];guides.fill(false);guideCache=null;
@@ -134,7 +159,17 @@ function cancelDrag(){const id=drag?.id;drag=null;guideCache=null;power(0);if(id
 canvas.addEventListener('pointercancel',cancelDrag);canvas.addEventListener('lostpointercapture',cancelDrag);
 $('cancel-aim').addEventListener('pointerdown',e=>{e.preventDefault();cancelDrag();});$('cancel-aim').onclick=cancelDrag;
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&drag){e.preventDefault();cancelDrag();}});
-function launch(s,vx,vy){if(mode==='online'){net.shoot(s.id,vx,vy,strike.x,-strike.y);status();return;}if(guideArmed[turn]){guideRemaining[turn]--;guideArmed[turn]=false;}guides[turn]=false;if(mode==='ai')aiBelief.observeShot(s.id,s.team);P.shoot(s,vx,vy,mode==='ai'&&turn===1?0:strike.x,mode==='ai'&&turn===1?0:-strike.y);phase='moving';aiAt=0;status();syncGuides();}
+function launch(s,vx,vy){
+  if(mode==='online'){net.shoot(s.id,vx,vy,strike.x,-strike.y);status();return;}
+  const shot={s,vx,vy,side:mode==='ai'&&turn===1?0:strike.x,follow:mode==='ai'&&turn===1?0:-strike.y};
+  if(guideArmed[turn]){
+    guideRemaining[turn]--;guideArmed[turn]=false;queuedShot=shot;
+    let name=turn===0?'플레이어 1':'플레이어 2';
+    if(mode==='ai'){name=turn===1?'AI':'나';if(turn===0)try{name=localStorage.getItem('arcade-nickname')||name;}catch{}}
+    localCue={id:`local:${performance.now()}`,name,duration:1.35,remaining:1.35};showShotCue(localCue);
+  }else fireLocal(shot);
+  guides[turn]=false;phase='moving';aiAt=0;status();syncGuides();
+}
 function finish(){updateStrike();const c=score();if(c[0]===0||c[1]===0){phase='over';$('result').hidden=false;$('winner').textContent=c[0]===c[1]?'무승부':c[1]===0?'흑돌 승리':'백돌 승리';$('result-detail').textContent=c[0]===c[1]?'마지막 돌이 함께 판을 떠났어요.':`남은 돌 ${Math.max(...c)}개 · 멋진 승부였어요`;}else{turn=1-turn;phase=mode==='local'?'handoff':'aim';if(turn===1&&mode==='ai')aiAt=performance.now()+750;}status();}
 function chooseAI(){
   const shot=AlkkagiAI.chooseShot(AlkkagiAI.visible(stones),aiBelief);
@@ -150,7 +185,7 @@ function draw(now){ctx.setTransform(canvas.width/600,0,0,canvas.height/600,0,0);
   for(const obstacle of P.hinges){const h={x:obstacle.x/2,y:obstacle.y/2,w:obstacle.w/2,h:obstacle.h/2};ctx.save();ctx.shadowColor='#0006';ctx.shadowBlur=4;ctx.shadowOffsetY=3;const g=ctx.createLinearGradient(h.x,0,h.x+h.w,0);g.addColorStop(0,'#6d716a');g.addColorStop(.4,'#c2c1ad');g.addColorStop(.55,'#898c7e');g.addColorStop(1,'#60665f');ctx.fillStyle=g;ctx.beginPath();ctx.roundRect(h.x,h.y,h.w,h.h,3);ctx.fill();ctx.shadowColor='transparent';ctx.strokeStyle='#e3e0c755';ctx.stroke();ctx.fillStyle='#4d554c';ctx.fillRect(h.x+1,299,h.w-2,2);for(const x of [h.x+5,h.x+h.w-5])for(const y of [h.y+3.5,h.y+h.h-3.5]){ctx.fillStyle='#4b5149';ctx.beginPath();ctx.arc(x,y,1.4,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#c8c8b7';ctx.beginPath();ctx.moveTo(x-.8,y+.5);ctx.lineTo(x+.8,y-.5);ctx.stroke();}ctx.restore();}
   ctx.scale(600/P.SIZE,600/P.SIZE);
   drawGuide();
-  for(const s of stones)if(s.alive&&s.iron&&s.team===ironOwner()&&phase!=='select'){
+  for(const s of stones)if(visibleIron(s)){
     ctx.strokeStyle='#76ffdf';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(s.x,s.y-31);ctx.lineTo(s.x+31,s.y);ctx.lineTo(s.x,s.y+31);ctx.lineTo(s.x-31,s.y);ctx.closePath();ctx.stroke();
   }
   for(const f of falls){const t=(now-f.time)/450;if(t<1)drawStone({...f,y:f.y+t*26},1-t,1-t*.6);}falls=falls.filter(f=>now-f.time<450);
@@ -158,11 +193,16 @@ function draw(now){ctx.setTransform(canvas.width/600,0,0,canvas.height/600,0,0);
   if(drag){const {dx,dy,d,p,pull}=shotVector();if(d>2){const s=drag.s,nx=dx/d,ny=dy/d,len=38+p*95;ctx.save();ctx.strokeStyle='#ffefc4';ctx.fillStyle='#ffefc4';ctx.lineWidth=3;ctx.setLineDash([5,7]);ctx.beginPath();ctx.moveTo(s.x+nx*26,s.y+ny*26);ctx.lineTo(s.x+nx*len,s.y+ny*len);ctx.stroke();ctx.setLineDash([]);ctx.beginPath();ctx.moveTo(s.x+nx*(len+10),s.y+ny*(len+10));ctx.lineTo(s.x+nx*len-ny*6,s.y+ny*len+nx*6);ctx.lineTo(s.x+nx*len+ny*6,s.y+ny*len-nx*6);ctx.fill();ctx.strokeStyle='#fff6';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(s.x-nx*23,s.y-ny*23);ctx.lineTo(s.x-nx*p*pull,s.y-ny*p*pull);ctx.stroke();ctx.restore();}}
 }
 function stepBattle(now){
+  if(localCue){
+    localCue.remaining=Math.max(0,localCue.remaining-1/120);
+    if(localCue.remaining<=1e-9){const shot=queuedShot;localCue=null;queuedShot=null;showShotCue(null);fireLocal(shot);status();}
+    return;
+  }
   const before=mode==='ai'?AlkkagiAI.visible(stones):null;
   P.step(stones,1/120,(s,v)=>{if(v>70)tone(v);},s=>{falls.push({...s,time:now});tone(500,true);score();});
   if(before)aiBelief.observeStep(before,AlkkagiAI.visible(stones));
 }
-function frame(now){const delta=last?Math.min((now-last)/1000,.05):0;last=now;if(mode==='online'){if(onlineTargets&&phase==='moving'){const mix=1-Math.exp(-22*delta);for(const s of stones){const target=onlineTargets[s.id];if(s.alive&&target){s.x+=(target.x-s.x)*mix;s.y+=(target.y-s.y)*mix;}}}}else if(!document.hidden&&!$('confirm').open){if(phase==='moving'){accumulator+=delta;while(accumulator>=1/120){stepBattle(now);accumulator-=1/120;}if(!P.moving(stones))finish();}else if(aiAt&&now>=aiAt){aiAt=0;chooseAI();}}draw(now);requestAnimationFrame(frame);}
+function frame(now){for(const node of [$('shot-cue'),$('shot-cue').firstElementChild])node.style.animationPlayState=mode!=='online'&&(document.hidden||$('confirm').open)?'paused':'running';const delta=last?Math.min((now-last)/1000,.05):0;last=now;if(mode==='online'){if(onlineTargets&&phase==='moving'){const mix=1-Math.exp(-22*delta);for(const s of stones){const target=onlineTargets[s.id];if(s.alive&&target){s.x+=(target.x-s.x)*mix;s.y+=(target.y-s.y)*mix;}}}}else if(!document.hidden&&!$('confirm').open){if(phase==='moving'){accumulator+=delta;while(accumulator>=1/120){stepBattle(now);accumulator-=1/120;}if(!localCue&&!P.moving(stones))finish();}else if(aiAt&&now>=aiAt){aiAt=0;chooseAI();}}draw(now);requestAnimationFrame(frame);}
 function requestReset(nextMode=mode){if(mode==='online'&&nextMode==='online'){net.rematch();return;}pending=nextMode;cancelDrag();$('confirm').showModal();}
 function setMode(next){
   if(mode==='online'&&next!=='online'){net.stop();history.replaceState(null,'',location.pathname+location.search);}
@@ -187,13 +227,14 @@ function applyOnlineState(state){
   onlineTargets=state.stones.map(s=>({...s}));
   stones=state.stones.map(s=>{const old=stones.find(o=>o.id===s.id);if(old?.alive&&!s.alive){falls.push({...old,time:performance.now()});tone(500,true);}return state.phase==='moving'&&old?.alive&&s.alive?{...s,x:old.x,y:old.y}:{...s};});
   if(drag)drag.s=stones.find(s=>s.id===drag.s.id);
-  turn=state.turn;phase=state.phase;score();
+  turn=state.turn;phase=state.phase;showShotCue(state.shotCue);score();
   $('result').hidden=phase!=='over';
   if(phase==='over'){const c=score();$('winner').textContent=c[0]===c[1]?'무승부':c[1]===0?'흑돌 승리':'백돌 승리';$('result-detail').textContent=c[0]===c[1]?'마지막 돌이 함께 판을 떠났어요.':`남은 돌 ${Math.max(...c)}개 · 멋진 승부였어요`;}
 }
 function renderOnline(){
   syncGuides();
   const text=net.text(),session=net.session,state=net.state;
+  if(!state)showShotCue(null);
   $('online-message').textContent=text;$('status').textContent=text;
   $('online-role').textContent=session?(session.role==='spectator'?'관전 중':session.team===0?'나: 흑돌':'나: 백돌'):'';
   $('black-label').textContent=state?.names?.[0]||(session?.team===0?'나의 흑돌':'상대 흑돌');$('white-label').textContent=state?.names?.[1]||(session?.team===1?'나의 백돌':'상대 백돌');
@@ -215,7 +256,7 @@ $('room-form').onsubmit=e=>{e.preventDefault();const code=$('room-code').value.t
 $('room-leave').onclick=()=>requestReset('ai');
 $('room-reconnect').onclick=()=>{if(net.session)net.restore(net.session);};
 $('invite-copy').onclick=async()=>{try{await navigator.clipboard.writeText($('invite-link').value);$('copy-message').textContent='복사했습니다';}catch{$('invite-link').focus();$('invite-link').select();$('copy-message').textContent='링크를 길게 눌러 복사해 주세요';}};
-document.addEventListener('visibilitychange',()=>{last=0;cancelDrag();if(!document.hidden&&mode==='online')net.send({type:'sync'});});
+document.addEventListener('visibilitychange',()=>{if(mode!=='online')for(const node of [$('shot-cue'),$('shot-cue').firstElementChild])node.style.animationPlayState=document.hidden?'paused':'running';last=0;cancelDrag();if(!document.hidden&&mode==='online')net.send({type:'sync'});});
 syncGuides();reset();resize();requestAnimationFrame(frame);
 const invited=new URLSearchParams(location.hash.slice(1)).get('room'),saved=net.saved();
 if(new URLSearchParams(location.search).get('watch')==='1'&&invited){setMode('online');net.begin('watch',invited);}
