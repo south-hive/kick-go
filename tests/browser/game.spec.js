@@ -225,7 +225,7 @@ test('classic selection removes special rules, plays a recorded shot, and modern
   await expect(page.locator('#ruleset')).toHaveValue('modern');
   await page.locator('#ruleset').selectOption('classic');await page.locator('#accept').click();
   await expect(page.locator('#ruleset')).toHaveValue('classic');
-  await expect(page.locator('#iron-panel')).toBeHidden();await expect(page.locator('#spin-panel')).toBeHidden();await expect(page.locator('#guide-0')).toBeHidden();
+  await expect(page.locator('#iron-panel')).toBeHidden();await expect(page.locator('#strike-pad')).toBeHidden();await expect(page.locator('#guide-0')).toBeHidden();
   expect(await page.evaluate(()=>phase)).toBe('aim');
   await page.locator('#local-mode').click();await page.locator('#accept').click();
   const planned=await page.evaluate(()=>{

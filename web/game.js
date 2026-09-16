@@ -182,6 +182,7 @@ function syncAim(){
   const allowed=canSetStrike(),selected=stones?.find(s=>s.id===aimStoneId&&s.alive&&s.team===turn),valid=numericVelocity();
   for(const id of ['aim-angle','aim-power'])$(id).disabled=!allowed||!!drag;
   $('kick').disabled=!allowed||!selected||!valid||!!drag;
+  if(!drag)power(allowed&&selected&&valid?Math.hypot(valid.vx,valid.vy)/MAX_SPEED:0);
   $('aim-selection').textContent=!selected?'내 돌을 선택하세요':!valid?'각도 0~360° · 힘 0.1~100%':`돌 ${selected.id%5+1} · 킥으로 발사`;
 }
 for(const id of ['aim-angle','aim-power'])$(id).addEventListener('input',()=>{guideCache=null;const v=numericVelocity();power(v?Math.hypot(v.vx,v.vy)/MAX_SPEED:0);syncAim();});

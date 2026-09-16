@@ -73,7 +73,7 @@ test('classic lobby carries its rule set through readiness, gameplay and reconne
     await host.locator('#ready').click();await guest.locator('#ready').click();
     for(const p of [host,guest]){
       await expect(p).toHaveURL(/alkkagi\.html/);await expect(p.locator('#ruleset')).toHaveValue('classic');await expect(p.locator('#ruleset')).toBeDisabled();
-      await expect(p.locator('#iron-panel')).toBeHidden();await expect(p.locator('#spin-panel')).toBeHidden();
+      await expect(p.locator('#iron-panel')).toBeHidden();await expect(p.locator('#strike-pad')).toBeHidden();
     }
     const shooter=await host.evaluate(()=>net.state.turn===net.session.team)?host:guest;
     await shooter.evaluate(()=>launch(stones.find(s=>s.team===turn),100,0));
