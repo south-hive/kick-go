@@ -149,12 +149,13 @@ test('guide credit is reserved once, survives reconnect, and is spent only by an
 
 test('edge contact is eliminated before the server decides the winner',()=>{
   const {Room}=require('../multiplayer');
-  const room=new Room('edge-test',Date.now(),0);
-  room.phase='moving';
+  const room=new Room('edge-test',Date.now(),1,'classic');
+  for(const team of [0,1])room.seat(team,{readyState:1});
   room.stones=[
     {id:0,team:0,x:86.001,y:400,vx:0,vy:0,alive:true},
-    {id:5,team:1,x:122.002,y:400,vx:-1,vy:0,alive:true}
+    {id:5,team:1,x:122.002,y:400,vx:0,vy:0,alive:true}
   ];
+  room.shot(1,{stone:5,vx:-1,vy:0,side:0,follow:0,revision:room.revision,match:room.match});
   room.step(1/120);
   assert.equal(room.phase,'over');
   for(const team of [0,1]){
@@ -185,4 +186,20 @@ test('guided shot announces the nickname to players and spectators before physic
   assert.equal(room.shotCue,null);assert.equal(room.pendingShot,null);assert.ok(room.stones.some(s=>Math.hypot(s.vx,s.vy)>0));
   game.broadcast(room);await watcher.next(m=>m.type==='state'&&!m.shotCue&&m.stones.some(s=>Math.hypot(s.vx,s.vy)>0));
   assert.equal(room.guideRemaining[0],0);
+});
+
+test('iron clash hooks reveal the spent clash only at contact and match for players and spectators',async t=>{
+  const {host,guest,room,shot,connect,game}=await harness(t);
+  room.stones=[{id:0,team:0,x:400,y:400,vx:0,vy:0,alive:true,iron:true},{id:5,team:1,x:600,y:400,vx:0,vy:0,alive:true,iron:true}];
+  const watcher=await connect();watcher.send({type:'watch',code:room.code});await watcher.next(m=>m.type==='joined');
+  host.send({...shot(),vx:700,vy:0,side:0,follow:0});await host.next(m=>m.type==='accepted');
+  const initial=await host.next(m=>m.type==='state'&&m.phase==='moving');
+  assert.ok(!initial.shotPlayback.events.some(e=>e.type.startsWith('iron:')));
+  assert.equal(initial.shotPlayback.result,null);assert.equal('frames' in initial.shotPlayback,false);
+  room.step(.3);game.broadcast(room);
+  const event=await Promise.all([host,guest,watcher].map(c=>c.next(m=>m.type==='state'&&m.shotPlayback?.events.some(e=>e.type==='iron:clash'))));
+  const clashes=event.map(state=>state.shotPlayback.events.find(e=>e.type==='iron:clash'));
+  assert.deepEqual(clashes[0],clashes[1]);assert.deepEqual(clashes[1],clashes[2]);
+  assert.equal(clashes[0].attacker,0);assert.equal(clashes[0].defender,5);
+  assert.ok(event[0].stones.filter(s=>s.team===1).every(s=>!('iron' in s)));
 });

@@ -217,3 +217,97 @@ test('help is optional, pauses local play and guide emphasis follows remaining u
     await page.screenshot({path:`test-results/alkkagi-guide-${viewport.width}.png`,fullPage:true});
   }
 });
+
+test('classic selection removes special rules, plays a recorded shot, and modern restores them',async({page})=>{
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.goto('/alkkagi.html');
+  await page.locator('#ruleset').selectOption('classic');await page.locator('#cancel').click();
+  await expect(page.locator('#ruleset')).toHaveValue('modern');
+  await page.locator('#ruleset').selectOption('classic');await page.locator('#accept').click();
+  await expect(page.locator('#ruleset')).toHaveValue('classic');
+  await expect(page.locator('#iron-panel')).toBeHidden();await expect(page.locator('#spin-panel')).toBeHidden();await expect(page.locator('#guide-0')).toBeHidden();
+  expect(await page.evaluate(()=>phase)).toBe('aim');
+  await page.locator('#local-mode').click();await page.locator('#accept').click();
+  const planned=await page.evaluate(()=>{
+    window.observed=[];window.alkkagiEffects.on('*',(_,type)=>window.observed.push(type));
+    launch(stones[0],100,0);
+    return{result:lastShot.result,frames:lastShot.frames.length,before:stones[0].x,target:lastShot.frames.at(-1)[0].x};
+  });
+  expect(planned.frames).toBeGreaterThan(1);expect(planned.target).toBeGreaterThan(planned.before);
+  await expect.poll(()=>page.evaluate(()=>phase)).toBe('aim');
+  expect(await page.evaluate(()=>stones)).toEqual(await page.evaluate(()=>lastShot.frames.at(-1)));
+  expect(await page.evaluate(()=>window.observed)).toEqual(expect.arrayContaining(['shot:prepared','shot:start','shot:end','turn:start']));
+  await page.locator('#help-open').click();await expect(page.locator('#help-ruleset')).toContainText('클래식');await expect(page.locator('.help-guide')).toBeHidden();await page.locator('#help-close').click();
+  await page.setViewportSize({width:320,height:740});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+  await page.screenshot({path:'test-results/classic-mobile.png',fullPage:true});
+  await page.locator('#ruleset').selectOption('modern');await page.locator('#accept').click();
+  await expect(page.locator('#spin-panel')).toBeVisible();await expect(page.locator('#guide-0')).toBeVisible();await expect(page.locator('#iron-panel')).toBeVisible();
+  expect(await page.evaluate(()=>lastShot)).toBe(null);expect(errors).toEqual([]);
+});
+
+test('character presets react separately to real iron hits and customize the guided-shot hook',async({page})=>{
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.goto('/alkkagi.html');
+  await page.evaluate(()=>{
+    AlkkagiCharacters.register({id:'test-hero',name:'테스트 공격자',responses:{
+      'iron:hit':{actor:{lines:['막혔네!'],effects:[{type:'test-flash'}]}},
+      'guide:used':{actor:{lines:['계산하고 간다!'],effects:[{type:'guide-cue'}]}},
+    }});
+    AlkkagiCharacters.register({id:'test-rival',name:'테스트 수비자',responses:{'iron:hit':{target:{lines:['내가 막았다!'],effects:[{type:'test-flash'}]}}}});
+    setMode('local');phase='aim';turn=0;
+    alkkagiCharacters.assign(0,'test-hero');alkkagiCharacters.assign(1,'test-rival');
+    window.customEffects=[];window.reactions=[];window.guideEvents=[];
+    alkkagiPresentation.registerEffect('test-flash',reaction=>customEffects.push({team:reaction.team,role:reaction.role}));
+    alkkagiEffects.on('character:reaction',reaction=>reactions.push(reaction));
+    alkkagiEffects.on('guide:used',event=>guideEvents.push(event));
+    stones=[{id:0,team:0,x:400,y:400,vx:0,vy:0,alive:true},{id:5,team:1,x:600,y:400,vx:0,vy:0,alive:true,iron:true}];
+    launch(stones[0],700,0);
+  });
+  await expect(page.locator('#character-reaction-0')).toContainText('막혔네!');
+  await expect(page.locator('#character-reaction-1')).toContainText('내가 막았다!');
+  expect(await page.evaluate(()=>customEffects)).toEqual([{team:0,role:'actor'},{team:1,role:'target'}]);
+  const positions=await page.evaluate(()=>{
+    reset();phase='aim';turn=0;guideArmed[0]=true;
+    const before=stones.map(s=>[s.x,s.y]);launch(stones[0],100,0);return before;
+  });
+  await expect(page.locator('#shot-cue-line')).toHaveText('계산하고 간다!');
+  await expect(page.locator('#shot-cue')).toBeVisible();
+  expect(await page.evaluate(()=>stones.map(s=>[s.x,s.y]))).toEqual(positions);
+  expect(await page.evaluate(()=>guideEvents.length)).toBe(1);
+  await page.locator('#help-open').click();await page.waitForTimeout(150);
+  expect(await page.evaluate(()=>stones.map(s=>[s.x,s.y]))).toEqual(positions);
+  await page.locator('#help-close').click();
+  await expect(page.locator('#shot-cue')).toBeHidden();
+  expect(await page.evaluate(()=>guideEvents.length)).toBe(1);
+  await page.evaluate(()=>{reset();});
+  await expect(page.locator('#character-reaction-0')).toBeHidden();await expect(page.locator('#character-reaction-1')).toBeHidden();
+  expect(errors).toEqual([]);
+});
+
+test('basic character calls shatter, tells the opponent to focus, and queues 1-2-3 without a finisher',async({page})=>{
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto('/alkkagi.html');
+  await page.evaluate(()=>{
+    setMode('local');phase='aim';turn=0;
+    stones=[{id:0,team:0,x:400,y:400,vx:0,vy:0,alive:true,iron:true},{id:5,team:1,x:437,y:400,vx:0,vy:0,alive:true,iron:true}];
+    launch(stones[0],100,0);
+  });
+  await expect(page.locator('#shot-highlight')).toHaveText('파쇄!');
+  await expect.poll(()=>page.evaluate(()=>phase)).toBe('handoff');
+  expect(await page.evaluate(()=>stones[1].alive)).toBe(true);expect(await page.evaluate(()=>stones[1].x)).toBeGreaterThan(437);
+  await page.evaluate(()=>{
+    reset();phase='aim';turn=0;
+    stones=[{id:0,team:0,x:1105,y:400,vx:0,vy:0,alive:true},{id:5,team:1,x:400,y:400,vx:0,vy:0,alive:true}];
+    launch(stones[0],100,0);
+  });
+  await expect(page.locator('#character-reaction-1')).toContainText('집중하세요.');await expect(page.locator('#character-reaction-0')).toBeHidden();
+  await page.evaluate(()=>{
+    ruleset='classic';setMode('local');turn=0;
+    stones=[[0,0,930,400],[5,1,1072,347],[6,1,1038,427],[7,1,1083,442]].map(([id,team,x,y])=>({id,team,x,y,vx:0,vy:0,alive:true}));
+    window.calls=[];alkkagiEffects.on('character:reaction',reaction=>calls.push(reaction.line));launch(stones[0],1360,0);
+  });
+  await expect(page.locator('#shot-highlight')).toHaveText('1타');
+  await expect(page.locator('#shot-highlight')).toHaveText('2타');
+  await expect(page.locator('#shot-highlight')).toHaveText('3타');
+  expect(await page.evaluate(()=>calls)).toEqual(['1타','2타','3타']);
+  expect(errors).toEqual([]);
+});

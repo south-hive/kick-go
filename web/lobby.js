@@ -10,6 +10,9 @@
   try{$('nickname').value=localStorage.getItem('arcade-nickname')||'';}catch{}
   const selected=gameName[params.get('game')]?params.get('game'):'alkkagi';
   $('game').value=selected;$('join-game').value=selected;
+  if(Object.hasOwn(AlkkagiRules.sets,params.get('ruleset')))$('ruleset').value=params.get('ruleset');
+  const syncRuleset=()=>{$('ruleset-field').hidden=$('game').value!=='alkkagi';};
+  $('game').onchange=syncRuleset;syncRuleset();
   let inviteHash;
   function readInvite(){
     inviteHash=new URLSearchParams(location.hash.slice(1));
@@ -23,7 +26,7 @@
   function enter(game,action,code){
     if(net?.active||net?.session)return;
     saveName();activeGame=game;net=connections[game];state=null;returning=false;remember();
-    const options={lobby:true,nickname:nickname(),title:$('title').value,public:$('visibility').value==='public'};
+    const options={...(game==='alkkagi'?{ruleset:$('ruleset').value}:{}),lobby:true,nickname:nickname(),title:$('title').value,public:$('visibility').value==='public'};
     if(game==='alkkagi')net.begin(action,code,options);else net.begin(action,code,nickname(),options);
     render();
   }
@@ -37,7 +40,7 @@
     for(const id of ['create','join','watch-code'])$(id).disabled=busy;
     if(!net){say('닉네임을 정하고 방을 만들거나 참가하세요.');return;}
     if(!state){say(net.message||'방에 연결하고 있습니다…');return;}
-    $('room-title').textContent=state.title||'함께 한 판';$('room-game').textContent=`${gameName[activeGame]} · ${state.public?'공개 방':'초대 방'}`;
+    $('room-title').textContent=state.title||'함께 한 판';$('room-game').textContent=`${gameName[activeGame]}${activeGame==='alkkagi'?' · '+AlkkagiRules.get(state.ruleset).name:''} · ${state.public?'공개 방':'초대 방'}`;
     const phase=state.phase,team=net.session.team,spectator=net.session.role==='spectator',connected=net.connected&&state.connected.every(Boolean);
     $('room-state').textContent=phase==='lobby'?'참가자 준비 중':phase==='over'?'경기 종료 · 같은 방에서 다시 겨룰 수 있습니다.':'경기가 진행 중입니다.';
     $('players').replaceChildren(...state.names.map((name,i)=>{
@@ -75,7 +78,7 @@
     const visible=rooms.filter(r=>$('filter').value==='all'||r.game===$('filter').value);
     $('rooms').replaceChildren(...visible.map(r=>{
       const card=document.createElement('article');card.className='room-card';card.dataset.code=r.code;
-      const badge=document.createElement('span');badge.className='badge';badge.textContent=`${gameName[r.game]} · ${phaseName[r.phase]||'진행 중'}`;
+      const badge=document.createElement('span');badge.className='badge';badge.textContent=`${gameName[r.game]}${r.game==='alkkagi'?' · '+AlkkagiRules.get(r.ruleset||'modern').name:''} · ${phaseName[r.phase]||'진행 중'}`;
       const title=document.createElement('h3');title.textContent=r.title;
       const info=document.createElement('p');info.textContent=`방장 ${r.host} · ${r.count}/2명 · 관전 ${r.spectators}명`;
       const buttons=document.createElement('div');buttons.className='row';

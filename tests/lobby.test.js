@@ -67,3 +67,27 @@ test('both games share the directory and alkkagi watchers see both protections w
   assert.equal(spent.stones[5].iron,true);
   watcher.send({type:'shot',stone:0,vx:100,vy:0,side:0,follow:0});assert.equal((await watcher.next(m=>m.type==='error')).code,'READ_ONLY');
 });
+
+test('classic lobby validates creation, starts without selection, and ignores joiner rule overrides',async t=>{
+  const {game,client}=await harness(t),host=await client('/ws'),guest=await client('/ws');
+  host.send({type:'create',lobby:true,ruleset:'avant-garde'});
+  assert.equal((await host.next(m=>m.type==='error')).code,'INVALID_RULESET');assert.equal(game.rooms.size,0);
+  host.send({type:'create',lobby:true,public:true,ruleset:'classic'});
+  const {code}=await host.next(m=>m.type==='joined');await host.next(m=>m.type==='state');
+  assert.equal(game.lobby.listing()[0].ruleset,'classic');
+  guest.send({type:'join',code,ruleset:'modern'});await guest.next(m=>m.type==='joined');
+  assert.equal((await guest.next(m=>m.type==='state')).ruleset,'classic');
+  host.send({type:'prepare',ready:true,match:1});await host.next(m=>m.type==='state'&&m.lobbyReady[0]);
+  guest.send({type:'prepare',ready:true,match:1});const started=await guest.next(m=>m.type==='state'&&m.phase==='aim');
+  assert.deepEqual(started.guideRemaining,[0,0]);assert.equal(started.shotPlayback,null);
+  host.send({type:'guide',match:1,revision:started.revision});assert.equal((await host.next(m=>m.type==='error')).code,'RULE_DISABLED');
+  host.send({type:'shot',stone:0,vx:100,vy:0,side:1,follow:0,match:1,revision:started.revision});assert.equal((await host.next(m=>m.type==='error')).code,'RULE_DISABLED');
+});
+
+test('invalid character ids cannot create ghost rooms or occupy a guest seat',async t=>{
+  const {game,client}=await harness(t),host=await client('/ws'),guest=await client('/ws');
+  host.send({type:'create',characterId:'missing'});assert.equal((await host.next(m=>m.type==='error')).code,'INVALID_CHARACTER');assert.equal(game.rooms.size,0);
+  host.send({type:'create',lobby:true,characterId:'default'});const {code}=await host.next(m=>m.type==='joined');await host.next(m=>m.type==='state');
+  guest.send({type:'join',code,characterId:'missing'});assert.equal((await guest.next(m=>m.type==='error')).code,'INVALID_CHARACTER');assert.equal(game.rooms.get(code).players[1],null);
+  guest.send({type:'join',code,characterId:'default'});await guest.next(m=>m.type==='joined');assert.deepEqual((await guest.next(m=>m.type==='state')).characters,['default','default']);
+});

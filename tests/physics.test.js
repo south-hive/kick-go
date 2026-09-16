@@ -181,3 +181,22 @@ test('friendly impact consumes protection in either pair order, but mere resting
   const a=stone(400,400),b={...stone(435,400),iron:true};
   P.step([a,b],1/120);assert.equal(b.iron,true);
 });
+
+test('iron-on-iron direct shots match ordinary collision physics, for either opener and pair order',()=>{
+  const publicMotion=board=>board.map(({x,y,vx,vy,alive,spinPower,spinSide,spinFollow})=>({x,y,vx,vy,alive,spinPower,spinSide,spinFollow}));
+  for(const team of [0,1])for(const reversed of [false,true])for(const speed of [100,500]){
+    const attacker={...stone(400,400),id:team*5,team,iron:true};
+    const defender={...stone(437,400),id:(1-team)*5,team:1-team,iron:true};
+    const ordinary=[{...attacker,iron:false},{...defender,iron:false}];
+    P.shoot(attacker,speed,0);P.shoot(ordinary[0],speed,0);
+    const board=reversed?[defender,attacker]:[attacker,defender],control=reversed?ordinary.reverse():ordinary,events=[];
+    for(let i=0;i<500&&P.moving(board);i++){
+      P.step(board,1/120,()=>{},()=>{},(a,b,contact)=>{if(contact?.ironClash)events.push(contact);});
+      P.step(control,1/120);assert.deepEqual(publicMotion(board),publicMotion(control));
+    }
+    assert.equal(events.length,1);assert.equal(events[0].attacker,attacker.id);assert.equal(events[0].defender,defender.id);
+    assert.equal(defender.iron,false);assert.equal(attacker.iron,false);assert.equal(attacker.ironShot,false);
+    if(speed===100)assert.equal(defender.alive,true); // A weak shot does not force ejection.
+    assert.ok(defender.x>437);
+  }
+});

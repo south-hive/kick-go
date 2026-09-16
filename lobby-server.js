@@ -2,7 +2,7 @@
 const {WebSocketServer}=require('ws');
 function attachLobby(server,games){
   const wss=new WebSocketServer({noServer:true,maxPayload:1024,perMessageDeflate:false});
-  function listing(){return Object.entries(games).flatMap(([game,rooms])=>[...rooms.values()].filter(r=>r.lobby&&r.public).map(r=>({game,code:r.code,title:r.title,host:r.players[0]?.name||'방장',names:r.players.map(p=>p?.name||null),count:r.players.filter(Boolean).length,phase:r.phase,connected:r.players.map(p=>!!(p?.socket?.readyState===1)),spectators:r.spectators?.size||0})));}
+  function listing(){return Object.entries(games).flatMap(([game,rooms])=>[...rooms.values()].filter(r=>r.lobby&&r.public).map(r=>({game,...(game==='alkkagi'?{ruleset:r.ruleset}:{}),code:r.code,title:r.title,host:r.players[0]?.name||'방장',names:r.players.map(p=>p?.name||null),count:r.players.filter(Boolean).length,phase:r.phase,connected:r.players.map(p=>!!(p?.socket?.readyState===1)),spectators:r.spectators?.size||0})));}
   function send(ws){if(ws.readyState!==1)return;if(ws.bufferedAmount>256*1024)return ws.terminate();ws.send(JSON.stringify({type:'rooms',version:1,rooms:listing()}));}
   server.on('upgrade',(req,socket,head)=>{
     if(req.url!=='/ws/lobby')return;

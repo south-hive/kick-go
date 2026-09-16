@@ -18,7 +18,7 @@ function client(t) {
   t.after(()=>net.stop(false));net.begin('create');
   const socket=sockets[0];socket.onopen();
   socket.receive({type:'joined',version:1,code:'ABCDEF123456',team:0,token:'test-session'});
-  const state={type:'state',version:1,code:'ABCDEF123456',phase:'aim',turn:0,connected:[true,true],votes:[false,false],firstPlayer:0,guideRemaining:[1,2],guideArmed:[false,false]};
+  const state={type:'state',version:1,code:'ABCDEF123456',ruleset:'modern',shotPlayback:null,phase:'aim',turn:0,connected:[true,true],votes:[false,false],firstPlayer:0,guideRemaining:[1,2],guideArmed:[false,false]};
   return{net,socket,state,accepted};
 }
 test('legacy server without iron selection is rejected instead of silently playing ordinary stones',t=>{
@@ -33,4 +33,10 @@ test('current server proceeds through secret selection and allows play after bot
   assert.equal(net.canShoot(),false);assert.equal(accepted.length,1);
   socket.receive({...state,ironReady:[true,true]});
   assert.equal(accepted.length,2);assert.equal(net.canShoot(),true);
+});
+test('server without rule sets and recorded playback is rejected',t=>{
+  const {net,socket,state,accepted}=client(t);
+  delete state.ruleset;delete state.shotPlayback;
+  socket.receive({...state,ironReady:[true,true]});
+  assert.equal(accepted.length,0);assert.match(net.text(),/구버전/);assert.equal(net.canShoot(),false);
 });

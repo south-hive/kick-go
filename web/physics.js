@@ -6,7 +6,7 @@
   const hinges=[{x:214.5,y:584,w:111,h:32},{x:874.5,y:584,w:111,h:32}];
   // Arcade spin: preserve the launch frame, then release stored rotation on stone impact.
   function shoot(s,vx,vy,side=0,follow=0){
-    s.iron=false;
+    s.ironShot=!!s.iron;s.iron=false;
     const speed=Math.hypot(vx,vy),length=Math.max(1,Math.hypot(side,follow));
     s.vx=vx;s.vy=vy;s.spinSide=side/length;s.spinFollow=follow/length;
     s.shotX=speed?vx/speed:0;s.shotY=speed?vy/speed:0;s.spinPower=speed;
@@ -20,10 +20,11 @@
     s.spinPower=0;s.spinSide=0;s.spinFollow=0;
   }
   function setup(){return [0,1].flatMap(team=>Array.from({length:5},(_,i)=>({id:team*5+i,team,x:256+i*172,y:team===0?[984,804,924,804,984][i]:1200-[984,804,924,804,984][i],vx:0,vy:0,alive:true})));}
-  function hitRect(s,h){
+  function hitRect(s,h,onContact){
     const x=Math.max(h.x,Math.min(s.x,h.x+h.w)),y=Math.max(h.y,Math.min(s.y,h.y+h.h));
     let dx=s.x-x,dy=s.y-y,d=Math.hypot(dx,dy),nx,ny,depth;
     if(d>=R)return false;
+    onContact(s,null);
     if(d>0){nx=dx/d;ny=dy/d;depth=R-d;}
     else{const sides=[{d:s.x-h.x,nx:-1,ny:0},{d:h.x+h.w-s.x,nx:1,ny:0},{d:s.y-h.y,nx:0,ny:-1},{d:h.y+h.h-s.y,nx:0,ny:1}].sort((a,b)=>a.d-b.d);nx=sides[0].nx;ny=sides[0].ny;depth=R+sides[0].d;}
     s.x+=nx*depth;s.y+=ny*depth;const v=s.vx*nx+s.vy*ny;
@@ -31,6 +32,7 @@
   }
   function stop(s){
     s.vx=0;s.vy=0;
+    if(s.ironShot!==undefined)s.ironShot=false;
     if(s.spinPower!==undefined)s.spinPower=0;
     if(s.spinSide!==undefined)s.spinSide=0;
     if(s.spinFollow!==undefined)s.spinFollow=0;
@@ -40,10 +42,10 @@
     if(s.x>=EDGE&&s.x<=SIZE-EDGE&&s.y>=EDGE&&s.y<=SIZE-EDGE)return false;
     s.alive=false;stop(s);onFall(s);return true;
   }
-  function step(stones,dt,onHit=()=>{},onFall=()=>{},onCollision=()=>{}){
+  function step(stones,dt,onHit=()=>{},onFall=()=>{},onCollision=()=>{},rules={hinges:true,iron:true,spin:true},onContact=()=>{}){
     for(const s of stones){if(fallOutside(s,onFall))continue;s.x+=s.vx*dt;s.y+=s.vy*dt;
       if(fallOutside(s,onFall))continue;
-      for(const h of hinges)if(hitRect(s,h)){onHit(s,Math.hypot(s.vx,s.vy));onCollision(s,null);}
+      for(const h of (rules.hinges?hinges:[]))if(hitRect(s,h,onContact)){onHit(s,Math.hypot(s.vx,s.vy));onCollision(s,null);}
       // Keep fast chain shots lively; smoothly brake the slow glide afterward.
       const speed=Math.hypot(s.vx,s.vy);
       const friction=FRICTION+EXTRA_FRICTION*Math.max(0,1-speed/SLOW_SPEED);
@@ -54,30 +56,38 @@
     for(let i=0;i<stones.length;i++)for(let j=i+1;j<stones.length;j++){
       const a=stones[i],b=stones[j];if(!a.alive||!b.alive)continue;
       const dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy);if(d>=R*2)continue;
+      onContact(a,b);
       const nx=d?dx/d:1,ny=d?dy/d:0,overlap=(R*2-d)/2+.01;
       const closing=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny;
-      if(closing<0&&a.team!==b.team&&(a.iron||b.iron)){
+      let contact;
+      if(rules.iron&&closing<0&&a.team!==b.team&&(a.iron||b.iron)){
         const guard=a.iron?a:b,other=guard===a?b:a,sign=guard===a?1:-1;
         const gx=nx*sign,gy=ny*sign;
-        guard.iron=false;guard.vx=0;guard.vy=0;
-        other.x+=gx*overlap*2;other.y+=gy*overlap*2;
         const normal=other.vx*gx+other.vy*gy;
-        if(normal<0){other.vx-=1.55*normal*gx;other.vy-=1.55*normal*gy;}
-        other.spinPower=0;other.spinSide=0;other.spinFollow=0;
-        onHit(other,-closing);onCollision(a,b);fallOutside(other,onFall);continue;
+        if(other.ironShot&&normal<0){
+          // A launched iron stone breaks the other protection; ordinary equal-mass physics follows.
+          guard.iron=false;other.ironShot=false;
+          contact={ironClash:true,attacker:other.id,defender:guard.id};
+        }else{
+          guard.iron=false;guard.vx=0;guard.vy=0;
+          other.x+=gx*overlap*2;other.y+=gy*overlap*2;
+          if(normal<0){other.vx-=1.55*normal*gx;other.vy-=1.55*normal*gy;}
+          other.spinPower=0;other.spinSide=0;other.spinFollow=0;
+          onHit(other,-closing);onCollision(a,b,{ironBlock:true,attacker:other.id,defender:guard.id});fallOutside(other,onFall);continue;
+        }
       }
       // Friendly impacts spend the protection but retain ordinary momentum transfer.
       if(closing<0&&a.team===b.team){if(a.iron)a.iron=false;if(b.iron)b.iron=false;}
       a.x-=nx*overlap;a.y-=ny*overlap;b.x+=nx*overlap;b.y+=ny*overlap;
-      const v=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny;if(v<0){const impulse=-v*(1+RESTITUTION)/2;a.vx-=impulse*nx;a.vy-=impulse*ny;b.vx+=impulse*nx;b.vy+=impulse*ny;releaseSpin(a,-v);releaseSpin(b,-v);onHit(a,-v);onCollision(a,b);}
+      const v=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny;if(v<0){const impulse=-v*(1+RESTITUTION)/2;a.vx-=impulse*nx;a.vy-=impulse*ny;b.vx+=impulse*nx;b.vy+=impulse*ny;if(rules.spin){releaseSpin(a,-v);releaseSpin(b,-v);}onHit(a,-v);onCollision(a,b,contact);}
       // Resolve this contact, then remove fallen stones before any later pair can hit them.
       fallOutside(a,onFall);fallOutside(b,onFall);
     }
     for(const s of stones)if(s.alive&&Math.hypot(s.vx,s.vy)<=STOP_SPEED)stop(s);
   }
   const moving=stones=>stones.some(s=>s.alive&&Math.hypot(s.vx,s.vy)>STOP_SPEED);
-  function predict(stones,id,vx,vy,side=0,follow=0){
-    const sim=stones.map(s=>({...s,iron:false})),shooter=sim.find(s=>s.id===id&&s.alive);
+  function predict(stones,id,vx,vy,side=0,follow=0,rules={hinges:true,iron:true,spin:true}){
+    const sim=stones.map(s=>({...s,iron:false,ironShot:false})),shooter=sim.find(s=>s.id===id&&s.alive);
     const result={approach:[],branches:[],collision:false};
     if(!shooter)return result;
     const point=s=>({x:s.x,y:s.y});
@@ -88,7 +98,7 @@
       step(sim,1/120,()=>{},()=>{},(a,b)=>{
         contacts++;
         if(contacts===1){participants=b?[a,b]:[a];result.collision=true;}
-      });
+      },rules);
       if(contacts>1)break;
       if(!result.branches.length){
         result.approach.push(point(shooter));

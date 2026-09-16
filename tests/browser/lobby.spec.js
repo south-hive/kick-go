@@ -56,3 +56,26 @@ test('private room stays out of the list, allows invitations, and renders names 
     await host.setViewportSize({width:1280,height:900});await host.screenshot({path:'test-results/lobby-desktop.png',fullPage:true});
   }finally{await a.close();await b.close();}
 });
+
+test('classic lobby carries its rule set through readiness, gameplay and reconnect',async({browser})=>{
+  const contexts=await Promise.all([0,1].map(()=>browser.newContext({baseURL:'http://127.0.0.1:8091'})));
+  const [host,guest]=await Promise.all(contexts.map(c=>c.newPage()));
+  const errors=[];for(const p of [host,guest])p.on('pageerror',e=>errors.push(e.message));
+  try{
+    await host.goto('/lobby.html?game=alkkagi');await host.locator('#ruleset').selectOption('classic');await host.locator('#create').click();
+    await expect(host.locator('#room-game')).toContainText('클래식');const invite=await host.locator('#invite').inputValue();
+    await guest.goto(invite);await guest.locator('#join').click();await expect(guest.locator('#room-game')).toContainText('클래식');
+    await host.locator('#ready').click();await guest.locator('#ready').click();
+    for(const p of [host,guest]){
+      await expect(p).toHaveURL(/alkkagi\.html/);await expect(p.locator('#ruleset')).toHaveValue('classic');await expect(p.locator('#ruleset')).toBeDisabled();
+      await expect(p.locator('#iron-panel')).toBeHidden();await expect(p.locator('#spin-panel')).toBeHidden();
+    }
+    const shooter=await host.evaluate(()=>net.state.turn===net.session.team)?host:guest;
+    await shooter.evaluate(()=>launch(stones.find(s=>s.team===turn),100,0));
+    await expect.poll(()=>host.evaluate(()=>net.state.shotPlayback?.done)).toBe(true);
+    const end=await host.evaluate(()=>net.state.stones.map(({x,y,alive})=>({x,y,alive})));
+    await guest.reload();await expect(guest.locator('#ruleset')).toHaveValue('classic');
+    await expect.poll(()=>guest.evaluate(()=>net.state?.stones.map(({x,y,alive})=>({x,y,alive})))).toEqual(end);
+    expect(errors).toEqual([]);
+  }finally{await Promise.all(contexts.map(c=>c.close()));}
+});

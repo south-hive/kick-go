@@ -47,17 +47,20 @@ class OnlineGame {
         this.change('');
       } else if (m.type === 'state') {
         if (m.version !== 1 || !this.session || m.code !== this.session.code) return;
-        if (!Array.isArray(m.ironReady) || m.ironReady.length !== 2 || !m.ironReady.every(v => typeof v === 'boolean') ||
+        if (!['classic','modern'].includes(m.ruleset) || !Object.prototype.hasOwnProperty.call(m,'shotPlayback') || !Array.isArray(m.ironReady) || m.ironReady.length !== 2 || !m.ironReady.every(v => typeof v === 'boolean') ||
           ![0,1].includes(m.firstPlayer) || !Array.isArray(m.guideRemaining) || m.guideRemaining.length !== 2 || !m.guideRemaining.every(v=>Number.isInteger(v)&&v>=0&&v<=2) ||
           !Array.isArray(m.guideArmed) || m.guideArmed.length !== 2 || !m.guideArmed.every(v=>typeof v==='boolean')) {
           this.stop(false); this.state = null; this.pending = false;
-          this.change('온라인 서버가 구버전입니다. 금강불괴·선공·겁쟁이 횟수 규칙을 업데이트한 뒤 새 방을 만들어 주세요.');
+          this.change('온라인 서버가 구버전입니다. 룰셋·샷 재생 구조를 업데이트한 뒤 새 방을 만들어 주세요.');
           return;
         }
         this.state = m; this.pending = false; this.onState(m); this.change('');
       } else if (m.type === 'error') {
         this.pending = false;
         const errors = { ROOM_NOT_FOUND: '방이 없거나 만료됐습니다. 새 초대 링크를 받아 주세요.', ROOM_FULL: '이미 두 명이 입장한 방입니다.', INVALID_SESSION: '이전 경기를 복구할 수 없습니다. 새 방을 만들어 주세요.', NOT_YOUR_TURN: '차례가 바뀌었습니다. 현재 판을 확인해 주세요.', OPPONENT_OFFLINE: '상대가 돌아오면 계속할 수 있습니다.', INVALID_SHOT: '발사 정보를 확인할 수 없습니다. 다시 조준해 주세요.', VERSION_MISMATCH: '게임이 업데이트됐습니다. 새로고침해 주세요.', SERVER_FULL: '대전 방이 가득 찼습니다. 잠시 후 다시 시도해 주세요.', REMATCH_UNAVAILABLE: '경기가 끝나고 두 사람이 연결되면 재대결할 수 있습니다.' };
+        errors.INVALID_CHARACTER = '지원하지 않는 캐릭터 프리셋입니다. 새로고침한 뒤 다시 입장해 주세요.';
+        errors.INVALID_RULESET = '지원하지 않는 룰셋입니다. 클래식 또는 모던을 선택해 주세요.';
+        errors.RULE_DISABLED = '이 룰셋에서는 사용할 수 없는 기능입니다.';
         errors.NO_GUIDES = '이번 경기의 겁쟁이 모드 사용 횟수를 모두 썼습니다.';
         if (!this.connected || ['ROOM_NOT_FOUND', 'INVALID_SESSION', 'VERSION_MISMATCH'].includes(m.code)) { this.stop(false); this.storage(null); this.session = null; }
         this.change(errors[m.code] || '요청을 처리하지 못했습니다. 다시 시도해 주세요.');

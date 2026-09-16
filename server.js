@@ -8,9 +8,12 @@ const { Room, VERSION } = require('./multiplayer');
 const { attachNaval } = require('./naval-server');
 const { attachLobby } = require('./lobby-server');
 const L = require('./lobby-rules');
+const Rules = require('./web/rules');
+const Characters = require('./web/characters');
 const files = Object.fromEntries(['lobby.html', 'lobby.css', 'lobby.js', 'index.html', 'battleship.html', 'naval.css', 'naval-model.js', 'naval-client.js', 'naval.js', 'robots.html', 'robots.css', 'robot-model.js', 'robots.js', 'alkkagi.html', 'flight.html', 'style.css', 'arcade.css', 'game.js', 'physics.js', 'online.js', 'config.js', 'hub.js', 'flight-model.js', 'flight.js', 'assets/pywel-panorama.png', 'assets/damiane-sprites-v2.png'].map(f => ['/' + f, f]));
 files['/'] = 'index.html';
 files['/ai.js'] = 'ai.js';
+for (const file of ['rules.js','shot-engine.js','shot-effects.js','characters.js']) files['/'+file]=file;
 const types = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.png': 'image/png' };
 
 function createGameServer({ automatic = true, firstPlayer } = {}) {
@@ -58,10 +61,11 @@ function createGameServer({ automatic = true, firstPlayer } = {}) {
         if (m.type === 'create' || m.type === 'join' || m.type === 'resume' || m.type === 'watch') {
           if (ws.room) throw Error('ALREADY_JOINED');
           let room, team, player;
+          const characterId=(m.type==='create'||m.type==='join')?Characters.get(m.characterId).id:null;
           if (m.type === 'create') {
             if (rooms.size >= 100) throw Error('SERVER_FULL');
             let code; do { code = randomBytes(6).toString('hex').toUpperCase(); } while (rooms.has(code));
-            room = new Room(code, Date.now(), firstPlayer); L.configure(room,m); rooms.set(code, room); team = 0; player = room.seat(team, ws);
+            room = new Room(code, Date.now(), firstPlayer, m.ruleset); L.configure(room,m); rooms.set(code, room); team = 0; player = room.seat(team, ws, Date.now(), characterId);
           } else {
             room = rooms.get(typeof m.code === 'string' ? m.code.toUpperCase() : '');
             if (!room) throw Error('ROOM_NOT_FOUND');
@@ -75,7 +79,7 @@ function createGameServer({ automatic = true, firstPlayer } = {}) {
               if (resumed.previous && resumed.previous !== ws) { resumed.previous.room = null; send(resumed.previous, { type: 'ended', reason: 'REPLACED' }); resumed.previous.close(); }
             } else {
               if (room.players[1]) throw Error('ROOM_FULL');
-              team = 1; player = room.seat(team, ws);
+              team = 1; player = room.seat(team, ws, Date.now(), characterId);
             }
           }
           if(m.type!=='resume')L.namePlayer(room,team,m.nickname);
@@ -90,7 +94,7 @@ function createGameServer({ automatic = true, firstPlayer } = {}) {
             return;
           }
           if (!room || room.players[ws.team]?.socket !== ws) throw Error('NOT_JOINED');
-          if(m.type==='prepare'){L.prepare(room,ws.team,m,'select');broadcast(room);}
+          if(m.type==='prepare'){L.prepare(room,ws.team,m,Rules.initialPhase(room.ruleset));broadcast(room);}
           else if (m.type === 'shot') { room.shot(ws.team, m); send(ws, { type: 'accepted', request: m.request }); broadcast(room); }
           else if (m.type === 'selectIron') { room.selectIron(ws.team, m); broadcast(room); }
           else if (m.type === 'guide') { room.armGuide(ws.team, m); broadcast(room); }
