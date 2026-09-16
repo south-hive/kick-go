@@ -58,3 +58,20 @@ header{padding:0 8px}h1{font-size:21px;margin-top:3px}.eyebrow{font-size:8px}
 @keyframes cue-punch{0%{opacity:0;transform:scale(.35) rotate(-12deg)}18%{opacity:1;transform:scale(1.1) rotate(-4deg)}30%,74%{opacity:1;transform:scale(1) rotate(-5deg)}100%{opacity:0;transform:scale(1.25) translateY(-22px) rotate(-2deg)}}
 @keyframes cue-backdrop{0%{opacity:0}15%,74%{opacity:1}100%{opacity:0}}
 @media(prefers-reduced-motion:reduce){.shot-cue-card{animation-name:cue-backdrop;transform:none}}
+
+.game-back{display:flex;align-items:center;justify-content:space-between;gap:12px}
+#help-open{min-height:40px;padding:8px 13px;border:1px solid #8c9b85;border-radius:20px;background:#243b30;color:#f2e6cc;font-size:12px}
+.guide-toggle{min-height:48px;padding:7px 9px;border-radius:9px;line-height:1.4}
+.guide-toggle::before{display:none}.guide-toggle b{display:block;font-size:11px}.guide-toggle small{display:block;font-size:10px;font-weight:400;margin-top:2px}
+.guide-toggle.has-guides{background:#eac780;color:#2c291c;border-color:#ffe4ab;box-shadow:0 2px 8px #0003}
+.guide-toggle.has-guides:disabled{opacity:.65}
+.guide-toggle.guide-ready{animation:guide-beacon 1.8s ease-out 3}
+.guide-toggle[aria-pressed=true]{background:#184944;border-color:#77e4d0;color:#c4fff3;box-shadow:0 0 0 2px #77e4d033}
+@keyframes guide-beacon{0%,100%{box-shadow:0 0 0 0 #edc67500}50%{box-shadow:0 0 0 4px #edc67555}}
+#game-help{width:min(480px,calc(100vw - 28px));max-height:85svh;overflow-y:auto;overscroll-behavior:contain;padding:20px}
+#game-help header{gap:10px;align-items:center}#game-help h2{font-size:19px;margin:0}#help-close{min-height:44px;flex-shrink:0}
+#game-help section{margin-top:20px}#game-help h3{font-size:14px;color:#f0d39b;margin:0 0 8px}#game-help p{line-height:1.8;margin:8px 0}#game-help .help-lead{color:#eee9de}
+#game-help .help-guide{padding:14px;border:1px solid #eac78066;background:#eac7800a;border-radius:10px}#game-help strong{color:#ffe2a3}
+#game-help .help-note{font-size:11px;border-top:1px solid #ffffff25;padding-top:14px;margin-top:20px}
+@media(prefers-reduced-motion:reduce){.guide-toggle.guide-ready{animation:none}}
+.guide-toggle b,.guide-toggle small{word-break:keep-all}

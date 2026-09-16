@@ -5,16 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
   <meta name="theme-color" content="#182722">
   <title>나무 위의 한 수 · 알까기</title>
-  <link rel="stylesheet" href="style.css?v=1.6.1">
+  <link rel="stylesheet" href="style.css?v=1.6.2">
 </head>
 <body>
-  <nav class="game-back"><a href="./">← 게임 선택</a></nav>
+  <nav class="game-back"><a href="./">← 게임 선택</a><button id="help-open" aria-haspopup="dialog" aria-controls="game-help">? 게임 방법</button></nav>
   <main class="app">
     <header><div><span class="eyebrow">WOOD & STONE</span><h1>나무 위의 한 수<span>알까기</span></h1></div><button id="sound" class="icon" aria-label="효과음 켜기" aria-pressed="false">♪</button></header><p class="hint"><a href="lobby.html?game=alkkagi&amp;return=1" style="color:inherit">← 온라인 로비</a></p>
     <section class="scoreboard" aria-label="남은 돌">
-      <div class="player active" id="black-player"><i class="stone black"></i><div><span id="black-label">나의 흑돌</span><strong id="black-count">5</strong><button id="guide-0" class="guide-toggle" aria-label="1P 겁쟁이 모드" aria-pressed="false">겁쟁이 모드</button></div></div>
+      <div class="player active" id="black-player"><i class="stone black"></i><div><span id="black-label">나의 흑돌</span><strong id="black-count">5</strong><button id="guide-0" class="guide-toggle" aria-label="1P 겁쟁이 모드" aria-pressed="false"><b id="guide-title-0">겁쟁이 모드</b><small id="guide-hint-0">궤적 미리보기</small></button></div></div>
       <div class="versus">5 STONE MATCH<span>VS</span></div>
-      <div class="player" id="white-player"><div><span id="white-label">상대 백돌</span><strong id="white-count">5</strong><button id="guide-1" class="guide-toggle" aria-label="2P 겁쟁이 모드" aria-pressed="false">겁쟁이 모드</button></div><i class="stone white"></i></div>
+      <div class="player" id="white-player"><div><span id="white-label">상대 백돌</span><strong id="white-count">5</strong><button id="guide-1" class="guide-toggle" aria-label="2P 겁쟁이 모드" aria-pressed="false"><b id="guide-title-1">겁쟁이 모드</b><small id="guide-hint-1">궤적 미리보기</small></button></div><i class="stone white"></i></div>
     </section>
     <div class="status"><span id="turn-dot"></span><p id="status" role="status" aria-live="polite">흑돌 차례 · 돌을 당겨 조준하세요</p></div>
     <section class="arena" aria-label="알까기 게임판">
@@ -48,9 +48,18 @@
       <small>방장 흑돌 · 참가자 백돌 · 연결이 끊기면 10분 안에 같은 창으로 돌아오세요.</small>
     </section>
     <p class="caption">손끝의 힘, 한 수의 승부.</p>
-  <p class="release-version" data-release>v1.6.1 · 로컬</p>
+  <p class="release-version" data-release>v1.6.2 · 로컬</p>
 </main>
+  <dialog id="game-help" aria-labelledby="help-title">
+    <header><h2 id="help-title">알까기 · 게임 방법</h2><button id="help-close" aria-label="게임 방법 닫기" autofocus>닫기 ×</button></header>
+    <p class="help-lead">내 돌은 지키고, 상대 돌을 모두 판 밖으로 밀어내면 승리!</p>
+    <section><h3>01 · 당겨서 쏘기</h3><p>내 돌을 누르고 뒤로 당겼다가 놓으면 반대 방향으로 발사돼요. 멀리 당길수록 강해집니다. 조준선과 힘 게이지를 확인하세요.</p><p>취소하려면 ‘조준 취소’, Esc 또는 두 번째 손가락으로 판을 터치하세요. 모든 돌이 멈춘 뒤 차례가 바뀝니다.</p></section>
+    <section class="help-guide"><h3>02 · 어려운 샷? 겁쟁이 모드!</h3><p>점수 아래 <strong>금색 ‘겁쟁이 모드’ 버튼</strong>을 누른 뒤 돌을 당기면 예상 궤적이 보여요. 선공은 1회, 후공은 2회입니다.</p><p>조준 취소만으로는 횟수를 쓰지 않아요. 한 번 켰다면 궤적 표시를 꺼도 다음 발사 때 1회 사용합니다. 발사 전 닉네임 연출은 관전자에게도 보여요.</p><p>궤적은 금강불괴 효과를 반영하지 않으므로 실제 결과와 다를 수 있어요.</p></section>
+    <section><h3>03 · 비장의 돌, 금강불괴</h3><p>시작할 때 내 돌 하나를 선택하세요. 상대 돌의 충돌을 한 번 버티며 보호가 풀립니다. 직접 쏘거나 내 돌과 부딪혀도 풀려요. 내 돌끼리는 일반 돌처럼 충돌합니다.</p><p>플레이어는 자기 보호 상태만, 관전자는 양쪽 모두 볼 수 있어요.</p></section>
+    <section><h3>04 · 판과 타격점 활용하기</h3><p>돌의 중심이 판 가장자리를 넘으면 탈락합니다. 중앙 연결쇠는 돌이 튕기는 장애물이에요.</p><p>타격점을 위·아래·좌우로 바꾸면 돌과 충돌한 뒤 전진·백샷·옆 회전 효과가 적용돼요. 처음에는 ‘중앙 · 무회전’으로 시작해 보세요.</p></section>
+    <p class="help-note">혼자 / 한 기기 둘이는 도움말을 보는 동안 잠시 멈춥니다. 온라인 경기는 계속 진행돼요.</p>
+  </dialog>
   <dialog id="confirm"><h2>새 판을 시작할까요?</h2><p>진행 중인 경기는 초기화됩니다.</p><div><button id="cancel">계속 하기</button><button id="accept" class="primary">새로 시작</button></div></dialog>
-  <script src="config.js?v=1.6.1"></script><script src="physics.js?v=1.6.1"></script><script src="ai.js?v=1.6.1"></script><script src="online.js?v=1.6.1"></script><script src="game.js?v=1.6.1"></script>
+  <script src="config.js?v=1.6.2"></script><script src="physics.js?v=1.6.2"></script><script src="ai.js?v=1.6.2"></script><script src="online.js?v=1.6.2"></script><script src="game.js?v=1.6.2"></script>
 </body>
 </html>

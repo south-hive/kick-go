@@ -188,3 +188,32 @@ test('guided local shot shows a board-centered nickname cue before launch and cl
   await expect(page.locator('#shot-cue')).toBeHidden();
   expect(await page.evaluate(()=>queuedShot)).toBe(null);
 });
+
+test('help is optional, pauses local play and guide emphasis follows remaining uses',async({page})=>{
+  await page.goto('/alkkagi.html');
+  await expect(page.locator('#game-help')).not.toBeVisible();
+  await page.locator('#iron-options button').first().click();await page.locator('#iron-confirm').click();
+  await expect(page.locator('#guide-0')).toHaveClass(/guide-ready/);
+  await expect(page.locator('#guide-0')).toContainText('궤적 미리보기');
+  await page.locator('#help-open').click();
+  await expect(page.getByRole('dialog',{name:'알까기 · 게임 방법'})).toBeVisible();
+  await page.evaluate(()=>{launch(stones[0],100,0);});
+  const before=await page.evaluate(()=>stones.map(s=>[s.x,s.y]));
+  await page.waitForTimeout(250);
+  expect(await page.evaluate(()=>stones.map(s=>[s.x,s.y]))).toEqual(before);
+  await page.screenshot({path:'test-results/alkkagi-help-mobile.png'});
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#game-help')).not.toBeVisible();
+  await expect(page.locator('#help-open')).toBeFocused();
+  await expect.poll(()=>page.evaluate(()=>stones[0].x)).toBeGreaterThan(before[0][0]);
+  await page.evaluate(()=>{reset();phase='aim';turn=0;guideRemaining[0]=0;syncGuides();});
+  await expect(page.locator('#guide-0')).toBeDisabled();
+  await expect(page.locator('#guide-0')).not.toHaveClass(/has-guides|guide-ready/);
+  await expect(page.locator('#guide-0')).toContainText('모두 사용했어요');
+  await page.evaluate(()=>{guideRemaining[0]=1;syncGuides();});
+  for(const viewport of [{width:320,height:740},{width:844,height:390}]){
+    await page.setViewportSize(viewport);
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+    await page.screenshot({path:`test-results/alkkagi-guide-${viewport.width}.png`,fullPage:true});
+  }
+});
