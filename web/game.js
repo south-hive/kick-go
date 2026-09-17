@@ -208,8 +208,11 @@ function shotVector(){
 canvas.addEventListener('pointerup',e=>{
   if(!drag||e.pointerId!==drag.id)return;
   const r=$('cancel-aim').getBoundingClientRect();if(e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom){cancelDrag();return;}
-  drag.end=pos(e);showDragValues();const id=drag.id;drag=null;
-  if(canvas.hasPointerCapture(id))canvas.releasePointerCapture(id);syncAim();
+  drag.end=pos(e);showDragValues();const v=shotVector(),s=drag.s,id=drag.id;drag=null;
+  if(canvas.hasPointerCapture(id))canvas.releasePointerCapture(id);
+  if(!canSetStrike()){cancelDrag();return;}
+  if(v.d>=14&&!e.shiftKey){launch(s,v.dx/v.d*MAX_SPEED*v.p,v.dy/v.d*MAX_SPEED*v.p);return;}
+  syncAim();
 });
 function cancelDrag(){const id=drag?.id;drag=null;aimStoneId=null;guideCache=null;power(0);if(id!==undefined&&canvas.hasPointerCapture(id))canvas.releasePointerCapture(id);}
 canvas.addEventListener('pointercancel',cancelDrag);canvas.addEventListener('lostpointercapture',()=>{if(drag)cancelDrag();});

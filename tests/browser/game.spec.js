@@ -9,7 +9,7 @@ async function shoot(page, id) {
   const box = await page.locator('#game').boundingBox();
   const stone = await page.evaluate(id => viewPoint(stones.find(s => s.id === id)), id);
   const x = box.x + stone.x / 1200 * box.width, y = box.y + stone.y / 1200 * box.height;
-  await page.mouse.move(x, y); await page.mouse.down(); await page.mouse.move(x + 12, y, { steps: 3 }); await page.mouse.up(); await page.locator('#kick').click();
+  await page.mouse.move(x, y); await page.mouse.down(); await page.mouse.move(x + 12, y, { steps: 3 }); await page.mouse.up();
 }
 
 test('two browser contexts trade shots, share positions, and resume after reload', async ({ browser }) => {
@@ -149,7 +149,7 @@ test('aim cancels with Escape, release on cancel button and a second touch witho
   await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await cdp.detach();
   expect(await page.evaluate(()=>drag)).toBe(null);expect(await page.evaluate(()=>JSON.stringify(stones))).toBe(before);
   expect(await page.evaluate(()=>guideRemaining[0])).toBe(1);await expect(page.locator('#power-number')).toHaveText('0%');
-  await aim();await page.mouse.up();await page.locator('#kick').click();await expect.poll(()=>page.evaluate(()=>guideRemaining[0])).toBe(0);
+  await aim();await page.mouse.up();await expect.poll(()=>page.evaluate(()=>guideRemaining[0])).toBe(0);
 });
 
 test('rematch request is visible on the result overlay and acceptance sends the current match',async({page})=>{
@@ -380,7 +380,7 @@ test('numeric aim retains a drag, previews decimal edits and only fires on Kick'
   await page.evaluate(()=>{ruleset='classic';setMode('local');turn=0;phase='aim';status();});
   const box=await page.locator('#game').boundingBox(),s=await page.evaluate(()=>stones[0]);
   const x=box.x+s.x/1200*box.width,y=box.y+s.y/1200*box.height;
-  await page.mouse.move(x,y);await page.mouse.down();await page.mouse.move(x+20,y);await page.mouse.up();
+  await page.mouse.move(x,y);await page.mouse.down();await page.mouse.move(x+20,y);await page.keyboard.down('Shift');await page.mouse.up();await page.keyboard.up('Shift');
   await expect(page.locator('#kick')).toBeEnabled();await expect(page.locator('#aim-angle')).toHaveValue('270');
   expect(await page.evaluate(()=>phase)).toBe('aim');
   await page.locator('#aim-angle').fill('12.3456');await page.locator('#aim-power').fill('37.5');
