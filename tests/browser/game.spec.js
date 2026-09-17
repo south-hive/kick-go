@@ -40,6 +40,16 @@ test('two browser contexts trade shots, share positions, and resume after reload
     await expect(second.locator('#strike-pad')).toBeDisabled();
     await first.locator('#guide-'+firstTeam).click();
     await expect.poll(()=>first.evaluate(()=>net.state.guideArmed[net.session.team])).toBe(true);
+    // An armed guide survives reconnect and repeated clicks without losing its preview.
+    await first.reload();
+    await expect(first.locator('#status')).toContainText('내 차례');
+    const guide=first.locator('#guide-'+firstTeam);
+    await expect(guide).toHaveAttribute('aria-pressed','true');
+    await guide.click();
+    await expect(guide).toHaveAttribute('aria-pressed','true');
+    await first.evaluate(team=>{aimStoneId=team*5;guideCache=null;},firstTeam);
+    await expect.poll(()=>first.evaluate(()=>guideCache?.path.approach.length??0)).toBeGreaterThan(0);
+    await expect(guide).toContainText('ON');
     await shoot(first, firstTeam*5);
     await expect(first.locator('#shot-cue')).toBeVisible();
     await expect(second.locator('#shot-cue')).toBeVisible();
@@ -396,7 +406,7 @@ test('numeric aim retains a drag, previews decimal edits and only fires on Kick'
 test('numeric guide updates after selection and controls fit narrow and landscape screens',async({page})=>{
   for(const viewport of [{width:320,height:740},{width:844,height:390},{width:1366,height:900}]){
     await page.setViewportSize(viewport);await page.goto('/alkkagi.html');
-    await page.evaluate(()=>{setMode('local');phase='aim';turn=0;aimStoneId=0;guideArmed[0]=true;guides[0]=true;});
+    await page.evaluate(()=>{setMode('local');phase='aim';turn=0;aimStoneId=0;guideArmed[0]=true;});
     await page.locator('#aim-angle').fill('10.25');await page.locator('#aim-power').fill('62.5');
     await expect.poll(()=>page.evaluate(()=>guideCache?.key)).toBeTruthy();
     const before=await page.evaluate(()=>guideCache.key);await page.locator('#aim-angle').fill('10.26');

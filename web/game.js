@@ -24,7 +24,6 @@ window.alkkagiCharacters={
   players:characterPlayers,
 };
 window.alkkagiPresentation=shotEffects;
-const guides=[false,false];
 let firstPlayer=0,guideRemaining=[1,2],guideArmed=[false,false];
 function flippedView(){return mode==='online'&&net.session?.team===1;}
 function viewPoint(p){return flippedView()?{x:P.SIZE-p.x,y:P.SIZE-p.y}:{x:p.x,y:p.y};}
@@ -92,21 +91,21 @@ function syncGuides(){
     button.disabled=!canSetStrike()||team!==turn||guideRemaining[team]<=0||mode==='ai'&&team===1||mode==='online'&&net.session?.team!==team;
     const mine=mode==='local'||(mode==='ai'?team===0:net.session?.team===team);
     button.classList.toggle('has-guides',mine&&guideRemaining[team]>0);
-    button.classList.toggle('guide-ready',!button.disabled&&!guides[team]);
-    $('guide-title-'+team).textContent=`겁쟁이 모드 ${guideRemaining[team]}회`;
-    $('guide-hint-'+team).textContent=guideRemaining[team]<=0?'모두 사용했어요':guides[team]?'궤적 표시 중 ✓':guideArmed[team]?'다음 샷에 사용':'궤적 미리보기';
+    button.classList.toggle('guide-ready',!button.disabled&&!guideArmed[team]);
+    $('guide-title-'+team).textContent=`겁쟁이 모드${guideArmed[team]?' ON':''} ${guideRemaining[team]}회`;
+    $('guide-hint-'+team).textContent=guideRemaining[team]<=0?'모두 사용했어요':guideArmed[team]?'궤적 표시 중 ✓':'궤적 미리보기';
     button.setAttribute('aria-label',`${team+1}P 겁쟁이 모드 ${guideRemaining[team]}회 · ${$('guide-hint-'+team).textContent}`);
-    button.setAttribute('aria-pressed',String(guides[team]));
+    button.setAttribute('aria-pressed',String(guideArmed[team]));
   }
 }
 for(let team=0;team<2;team++)$('guide-'+team).onclick=()=>{
   if($('guide-'+team).disabled)return;
-  guides[team]=!guides[team];guideCache=null;
-  if(guides[team]){if(mode==='online'&&!guideArmed[team])net.armGuide();else guideArmed[team]=true;}
+  guideCache=null;
+  if(!guideArmed[team]){if(mode==='online')net.armGuide();else guideArmed[team]=true;}
   syncGuides();
 };
 function drawGuide(){
-  const aim=currentAim();if(!aim||!guides[turn]||!guideArmed[turn]||!canSetStrike())return;
+  const aim=currentAim();if(!aim||!guideArmed[turn]||!canSetStrike())return;
   const {s,v}=aim;
   const vx=v.dx/v.d*MAX_SPEED*v.p,vy=v.dy/v.d*MAX_SPEED*v.p;
   const key=JSON.stringify([stones,s.id,vx,vy,strike]);
@@ -152,7 +151,7 @@ function reset(rematch=false){
   syncRules();
   updateStrike();stones=P.setup();aiBelief=new AlkkagiAI.Belief(stones);
   firstPlayer=rematch?1-firstPlayer:Math.floor(Math.random()*2);turn=firstPlayer;
-  guideRemaining=AlkkagiRules.guideCounts(ruleset,firstPlayer);guideArmed=[false,false];guides.fill(false);guideCache=null;
+  guideRemaining=AlkkagiRules.guideCounts(ruleset,firstPlayer);guideArmed=[false,false];guideCache=null;
   phase=mode==='online'?'waiting':AlkkagiRules.initialPhase(ruleset);ironTeam=0;ironRevealed=false;ironChoice=null;cancelDrag();falls=[];aiAt=0;accumulator=0;
   if(phase==='aim'&&mode==='ai'&&turn===1)aiAt=performance.now()+750;
   if(!rules().iron){aiBelief.spent=1;for(const id in aiBelief.active)aiBelief.active[id]=0;}
@@ -231,7 +230,7 @@ function launch(s,vx,vy){
     guideRemaining[turn]--;guideArmed[turn]=false;queuedShot=shot;
     localCue={...lastShot.cue};playback.prepare();
   }else fireLocal(shot);
-  guides[turn]=false;phase='moving';aiAt=0;status();syncGuides();
+  phase='moving';aiAt=0;status();syncGuides();
 }
 function finish(){updateStrike();const c=score();if(c[0]===0||c[1]===0){phase='over';$('result').hidden=false;$('winner').textContent=c[0]===c[1]?'무승부':c[1]===0?'흑돌 승리':'백돌 승리';$('result-detail').textContent=c[0]===c[1]?'마지막 돌이 함께 판을 떠났어요.':`남은 돌 ${Math.max(...c)}개 · 멋진 승부였어요`;}else{turn=1-turn;phase=mode==='local'&&rules().iron?'handoff':'aim';if(phase==='aim')effectHooks.emit('turn:start',{team:turn,ruleset});if(turn===1&&mode==='ai')aiAt=performance.now()+750;}status();}
 function chooseAI(){
@@ -306,7 +305,6 @@ function applyOnlineState(state){
   const changed=phase!==state.phase||turn!==state.turn;
   if(changed&&state.phase==='select')ironChoice=null;
   if(changed){cancelDrag();updateStrike();}
-  if(changed)guides.fill(false);
   firstPlayer=state.firstPlayer;guideRemaining=[...state.guideRemaining];guideArmed=[...state.guideArmed];
   onlineTargets=state.stones.map(s=>({...s}));
   stones=state.stones.map(s=>{const old=stones.find(o=>o.id===s.id);return state.phase==='moving'&&old?.alive&&s.alive?{...s,x:old.x,y:old.y}:{...s};});
